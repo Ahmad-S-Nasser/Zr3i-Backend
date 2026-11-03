@@ -60,7 +60,7 @@ public static class MethodEndpoints
         state = m.State,
         frozenAt = m.FrozenAt,
         sealSha256 = m.ParametersSha256,
-        parameters = m.Parameters.GroupBy(p => p.Status).ToDictionary(g => g.Key, g => g.Count()),
+        parameters = ParameterStatus.All.ToDictionary(st => st, st => m.Parameters.Count(p => p.Status == st)),
     };
 
     private static async Task<object> Detail(MethodRegistry registry, MethodVersion m, CancellationToken ct) => new

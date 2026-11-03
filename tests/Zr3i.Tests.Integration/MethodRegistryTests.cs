@@ -45,11 +45,16 @@ public class MethodRegistryTests(MongoFixture mongo)
         Assert.Equal(ParameterStatus.Derived, m.Parameters.Single(p => p.Key == "reflectance.rule").Status);
         Assert.Equal(ParameterStatus.StartingRule, m.Parameters.Single(p => p.Key == "crop.beet.cycle_days").Status);
 
-        var undecided = m.Parameters.Where(p => p.Status == ParameterStatus.Undecided).Select(p => p.Key).Order();
-        Assert.Equal(
-            ["crop.indeterminate.rule", "crop.min_valid_scenes", "emergence.definition", "emergence.tolerance_days", "index.ndmi.formula",
-             "pass.min_separation_days", "scene.quality_thresholds", "verdict.precedence"],
-            undecided);
+        // The eight that were undecided were settled by the owner on 2026-11-04 (what each says is recorded, with its source).
+        Assert.DoesNotContain(m.Parameters, p => p.Status == ParameterStatus.Undecided);
+        Assert.Equal("3", m.Get("crop.min_valid_scenes"));
+        Assert.Contains("B8A", m.Get("index.ndmi.formula"));
+        Assert.Contains("no combined verdict", m.Get("verdict.precedence"));
+        Assert.Contains("seedling", m.Get("emergence.definition"));
+        Assert.All(new[] { "emergence.tolerance_days", "pass.min_separation_days" }, k2 => Assert.Equal("per crop", m.Get(k2)));
+        Assert.All(new[] { "crop.min_valid_scenes", "crop.indeterminate.rule", "scene.quality_thresholds", "emergence.definition", "emergence.tolerance_days",
+            "index.ndmi.formula", "pass.min_separation_days", "verdict.precedence" }, key =>
+            Assert.StartsWith("Owner decision 2026-11-04", m.Parameters.Single(p => p.Key == key).Source, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -107,6 +112,8 @@ public class MethodRegistryTests(MongoFixture mongo)
     public async Task AMethodCannotBeFrozenWhileAnythingIsUndecided()
     {
         var k = await NewAsync();
+        await k.Methods.SetParameterAsync("admin-1", R0, 1, "verdict.precedence", "ignored", ParameterStatus.Undecided, "reopened");
+        await k.Methods.SetParameterAsync("admin-1", R0, 1, "emergence.tolerance_days", "ignored", ParameterStatus.Undecided, "reopened");
 
         var codes = await Refused(() => k.Methods.FreezeAsync("admin-1", R0, 1, "Dr. Partner", []));
 

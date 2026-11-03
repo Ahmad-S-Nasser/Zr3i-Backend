@@ -26,7 +26,7 @@ public class MethodApiTests
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await web.Http.GetAsync(Url)).StatusCode);
         var list = await Json(await web.Http.SendAsync(web.Request(HttpMethod.Get, "/api/methods", user)));
-        Assert.Equal(("ZR3I-R0-2026-01", "draft", 8), (list[0].GetProperty("methodId").GetString(), list[0].GetProperty("state").GetString(), list[0].GetProperty("parameters").GetProperty("undecided").GetInt32()));
+        Assert.Equal(("ZR3I-R0-2026-01", "draft", 0), (list[0].GetProperty("methodId").GetString(), list[0].GetProperty("state").GetString(), list[0].GetProperty("parameters").GetProperty("undecided").GetInt32()));
 
         var detail = await Json(await web.Http.SendAsync(web.Request(HttpMethod.Get, Url, user)));
         var offset = detail.GetProperty("parameters").EnumerateArray().Single(p => p.GetProperty("key").GetString() == "area_gap.boundary_offset_m");
@@ -55,6 +55,7 @@ public class MethodApiTests
 
         var bad = await web.Http.SendAsync(web.Request(HttpMethod.Put, $"{Admin}/parameters/crop.min_valid_scenes", admin, new { value = "", status = "starting_rule", source = "x" }));
         Assert.Equal("value_required", (await Json(bad)).GetProperty("error").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await web.Http.SendAsync(web.Request(HttpMethod.Put, $"{Admin}/parameters/verdict.precedence", admin, new { value = "", status = "undecided", source = "reopened" }))).StatusCode);
         var early = await web.Http.SendAsync(web.Request(HttpMethod.Post, $"{Admin}/freeze", admin, new { approvedBy = "Dr. Partner", approvedKeys = Array.Empty<string>() }));
         Assert.Equal(HttpStatusCode.BadRequest, early.StatusCode);
         Assert.Contains("undecided:verdict.precedence", (await Json(early)).GetProperty("codes").EnumerateArray().Select(c => c.GetString()));
