@@ -1,6 +1,7 @@
 using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Geo;
+using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
 using Zr3i.Data.Jobs;
 using Zr3i.Kernel.Farms;
@@ -33,8 +34,10 @@ public sealed class KernelHarness
         Store = new KernelStore(Data);
         var hasher = new PasswordHasher(iterations: 1000);
         Audit = new AuditService(Store, Clock);
-        Organisations = new OrganisationService(Store, Audit, Clock);
+        AccountTypes = new AccountTypeService(Store);
+        Organisations = new OrganisationService(Store, AccountTypes, Audit, Clock);
         Invitations = new InvitationService(Store, hasher, Audit, Clock);
+        Platform = new PlatformService(Store, Organisations, Invitations, Clock);
         SignIn = new SignInService(Store, hasher, Audit, Clock);
         Sessions = new SessionService(Store, Clock);
         Authorization = new AuthorizationService(Store);
@@ -58,6 +61,8 @@ public sealed class KernelHarness
     public SessionService Sessions { get; }
     public AuthorizationService Authorization { get; }
     public DataStore Data { get; }
+    public AccountTypeService AccountTypes { get; }
+    public PlatformService Platform { get; }
     public CustomFieldService CustomFields { get; }
     public FarmService Farms { get; }
     public BoundaryService Boundaries { get; }

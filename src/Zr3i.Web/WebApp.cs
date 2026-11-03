@@ -1,6 +1,7 @@
 using System.Threading.RateLimiting;
 using Zr3i.Data;
 using Zr3i.Kernel;
+using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
@@ -31,7 +32,9 @@ public static class WebApp
         builder.Services.AddSingleton(sp => new KernelStore(sp.GetRequiredService<DataStore>()));
         builder.Services.AddSingleton(new PasswordHasher(config.GetValue("Auth:PasswordIterations", PasswordHasher.DefaultIterations)));
         builder.Services.AddSingleton<AuditService>();
+        builder.Services.AddSingleton<AccountTypeService>();
         builder.Services.AddSingleton<OrganisationService>();
+        builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<InvitationService>();
         builder.Services.AddSingleton<SignInService>();
         builder.Services.AddSingleton<SessionService>();
@@ -66,6 +69,14 @@ public static class WebApp
 
         if (config.GetValue("Mongo:MigrateOnStartup", false))
             app.Services.GetRequiredService<DataStore>().MigrateAsync().GetAwaiter().GetResult();
+
+        // First start of a new installation: invite the first Zr3i administrator. The token is shown once, here, and not stored in clear.
+        if (config["Platform:BootstrapAdminEmail"] is { Length: > 0 } adminEmail)
+        {
+            var token = app.Services.GetRequiredService<PlatformService>().BootstrapAsync(adminEmail).GetAwaiter().GetResult();
+            if (token is not null)
+                app.Logger.LogWarning("Zr3i administrator invitation for {Email} (shown once): {Token}", adminEmail, token);
+        }
 
         // TLS is terminated by the host; HTTPS redirection and HSTS are decided with the hosting choice (W6-4).
         app.UseCors();

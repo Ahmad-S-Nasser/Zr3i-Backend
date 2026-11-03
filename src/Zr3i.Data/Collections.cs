@@ -21,4 +21,9 @@ public static class Collections
     public const string ImportBatches = "import_batches";
     public const string ImportChunks = "import_chunks";
     public const string ImportRows = "import_rows";
+    public const string AccountTypes = "account_types";
+    public const string AccessRequests = "access_requests";
+    public const string Farmers = "farmers";
+    public const string ConsentRequests = "consent_requests";
+    public const string ConsentEvents = "consent_events";
 }
