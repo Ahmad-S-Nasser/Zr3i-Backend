@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Zr3i.Data\Zr3i.Data.csproj" />
+    <ProjectReference Include="..\..\src\Zr3i.Kernel\Zr3i.Kernel.csproj" />
   </ItemGroup>
 
 </Project>

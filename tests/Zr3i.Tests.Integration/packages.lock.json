@@ -147,6 +147,12 @@
         "dependencies": {
           "MongoDB.Driver": "[3.13.0, )"
         }
+      },
+      "zr3i.kernel": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Data": "[1.0.0, )"
+        }
       }
     }
   }
