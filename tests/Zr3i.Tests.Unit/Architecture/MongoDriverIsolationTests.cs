@@ -10,7 +10,7 @@ public class MongoDriverIsolationTests
     private static readonly string[] OtherSrcAssemblies =
     [
         "Zr3i.Kernel", "Zr3i.Geo", "Zr3i.Modules.Verification", "Zr3i.Modules.Risk",
-        "Zr3i.Reports", "Zr3i.Web", "Zr3i.Worker",
+        "Zr3i.Reports", "Zr3i.Imagery", "Zr3i.Web", "Zr3i.Worker",
     ];
 
     [Theory]

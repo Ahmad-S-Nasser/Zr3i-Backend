@@ -88,3 +88,9 @@ A method (for example `ZR3I-R0-2026-01`) is a versioned set of parameters. Each 
 | `POST /api/platform/methods/{id}/{version}/freeze` | `platform:methods:manage` | freeze a draft, naming who approves each provisional rule |
 | `POST /api/platform/methods/{id}/{version}/new-draft` | `platform:methods:manage` | open the next version as a copy |
 
+## Satellite scenes
+
+`POST /api/organisations/{id}/imagery/discover` (`kernel:imagery:write`, body `{ "from", "to", "maxCloudCover" }`) queues one scene search per map cell that holds a parcel of the organisation; the worker runs them and fills a shared catalogue of Sentinel-2 L2A scenes. `GET /api/imagery/scenes?from=&to=&tile=` lists the catalogue (any signed-in user). Scenes carry the Copernicus attribution and a hash of the provider's item. Run the worker (`dotnet run --project src/Zr3i.Worker`) for the searches to happen.
+
+A test that talks to the real Earth Search service is off by default; run it with `ZR3I_NETWORK_TESTS=1 dotnet test --filter Category=Network`.
+

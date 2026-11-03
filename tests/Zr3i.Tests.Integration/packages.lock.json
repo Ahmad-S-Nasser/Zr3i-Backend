@@ -159,6 +159,13 @@
           "ProjNET": "[2.1.0, )"
         }
       },
+      "zr3i.imagery": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      },
       "zr3i.kernel": {
         "type": "Project",
         "dependencies": {
@@ -200,6 +207,7 @@
         "type": "Project",
         "dependencies": {
           "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Imagery": "[1.0.0, )",
           "Zr3i.Kernel": "[1.0.0, )",
           "Zr3i.Modules.Risk": "[1.0.0, )",
           "Zr3i.Modules.Verification": "[1.0.0, )",

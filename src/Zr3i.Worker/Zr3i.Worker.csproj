@@ -17,5 +17,6 @@
     <ProjectReference Include="..\Zr3i.Modules.Verification\Zr3i.Modules.Verification.csproj" />
     <ProjectReference Include="..\Zr3i.Modules.Risk\Zr3i.Modules.Risk.csproj" />
     <ProjectReference Include="..\Zr3i.Reports\Zr3i.Reports.csproj" />
+    <ProjectReference Include="..\Zr3i.Imagery\Zr3i.Imagery.csproj" />
   </ItemGroup>
 </Project>

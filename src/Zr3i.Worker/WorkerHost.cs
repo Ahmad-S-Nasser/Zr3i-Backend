@@ -4,6 +4,8 @@ using Zr3i.Kernel;
 using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
+using Zr3i.Imagery;
+using Zr3i.Kernel.Imagery;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Jobs;
 
@@ -50,6 +52,12 @@ internal static class JobHandlers
     {
         services.AddSingleton<IJobHandler, ImportValidateHandler>();
         services.AddSingleton<IJobHandler, ImportCommitHandler>();
+
+        // Scene discovery: a shared HTTP client for the provider, the shared catalogue, and the handler that connects them.
+        services.AddSingleton(new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(5) }) { Timeout = TimeSpan.FromSeconds(60) });
+        services.AddSingleton<ISceneSource>(sp => new StacClient(sp.GetRequiredService<HttpClient>()));
+        services.AddSingleton<SceneCatalog>();
+        services.AddSingleton<IJobHandler, DiscoverHandler>();
     }
 }
 

@@ -348,6 +348,13 @@
           "ProjNET": "[2.1.0, )"
         }
       },
+      "zr3i.imagery": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      },
       "zr3i.kernel": {
         "type": "Project",
         "dependencies": {

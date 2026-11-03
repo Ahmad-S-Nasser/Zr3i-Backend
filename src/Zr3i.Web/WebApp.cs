@@ -5,6 +5,7 @@ using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imagery;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Methods;
 using Zr3i.Modules.Verification;
@@ -40,6 +41,8 @@ public static class WebApp
         builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<AccessRequestService>();
         builder.Services.AddSingleton<MethodRegistry>();
+        builder.Services.AddSingleton<SceneCatalog>();
+        builder.Services.AddSingleton(sp => new DiscoveryPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<FarmerService>();
         builder.Services.AddSingleton<ReadabilityService>();
         var sizeEdges = config.GetSection("Verification:SizeClassEdgesFeddan").Get<double[]>() ?? [];
@@ -109,6 +112,7 @@ public static class WebApp
         app.MapConsentEndpoints();
         app.MapReadabilityEndpoints();
         app.MapMethodEndpoints();
+        app.MapImageryEndpoints();
         app.MapMeEndpoints();
 
         return app;

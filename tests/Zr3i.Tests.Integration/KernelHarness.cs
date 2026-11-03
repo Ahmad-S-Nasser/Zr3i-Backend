@@ -6,6 +6,7 @@ using Zr3i.Kernel.Audit;
 using Zr3i.Data.Jobs;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imagery;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Methods;
 using Zr3i.Kernel.Jobs;
@@ -44,6 +45,8 @@ public sealed class KernelHarness
         Consent = new ConsentService(Store, Audit, Clock);
         Gate = new ConsentGate(Store, Audit, Clock);
         Methods = new MethodRegistry(Store, Audit, Clock);
+        Scenes = new SceneCatalog(Store, Audit, Clock);
+        Discovery = new DiscoveryPlanner(Store, Data.Jobs, Audit, Clock);
         AccessRequests = new AccessRequestService(Store, AccountTypes, Organisations, Invitations, Audit, Clock);
         SignIn = new SignInService(Store, hasher, Audit, Clock);
         Sessions = new SessionService(Store, Clock);
@@ -72,6 +75,8 @@ public sealed class KernelHarness
     public PlatformService Platform { get; }
     public AccessRequestService AccessRequests { get; }
     public MethodRegistry Methods { get; }
+    public SceneCatalog Scenes { get; }
+    public DiscoveryPlanner Discovery { get; }
     public FarmerService FarmerService { get; }
     public ConsentService Consent { get; }
     public ConsentGate Gate { get; }

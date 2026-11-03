@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Zr3i.Data/Zr3i.Data.csproj" />
     <Project Path="src/Zr3i.Geo/Zr3i.Geo.csproj" />
+    <Project Path="src/Zr3i.Imagery/Zr3i.Imagery.csproj" />
     <Project Path="src/Zr3i.Kernel/Zr3i.Kernel.csproj" />
     <Project Path="src/Zr3i.Modules.Risk/Zr3i.Modules.Risk.csproj" />
     <Project Path="src/Zr3i.Modules.Verification/Zr3i.Modules.Verification.csproj" />
