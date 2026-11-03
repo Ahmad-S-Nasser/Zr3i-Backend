@@ -38,6 +38,7 @@ public sealed class KernelHarness
         Organisations = new OrganisationService(Store, AccountTypes, Audit, Clock);
         Invitations = new InvitationService(Store, hasher, Audit, Clock);
         Platform = new PlatformService(Store, Organisations, Invitations, Clock);
+        AccessRequests = new AccessRequestService(Store, AccountTypes, Organisations, Invitations, Audit, Clock);
         SignIn = new SignInService(Store, hasher, Audit, Clock);
         Sessions = new SessionService(Store, Clock);
         Authorization = new AuthorizationService(Store);
@@ -63,6 +64,7 @@ public sealed class KernelHarness
     public DataStore Data { get; }
     public AccountTypeService AccountTypes { get; }
     public PlatformService Platform { get; }
+    public AccessRequestService AccessRequests { get; }
     public CustomFieldService CustomFields { get; }
     public FarmService Farms { get; }
     public BoundaryService Boundaries { get; }

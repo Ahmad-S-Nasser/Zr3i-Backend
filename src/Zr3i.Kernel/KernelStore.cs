@@ -26,6 +26,7 @@ public sealed class KernelStore(DataStore data)
     public TenantRepository<ParcelSeason> ParcelSeasons { get; } = data.Tenant<ParcelSeason>(Collections.ParcelSeasons);
     public TenantRepository<CustomFieldDefinition> CustomFieldDefinitions { get; } = data.Tenant<CustomFieldDefinition>(Collections.CustomFieldDefinitions);
 
+    public TenantRepository<AccessRequest> AccessRequests { get; } = data.Tenant<AccessRequest>(Collections.AccessRequests);
     public TenantRepository<AccountType> AccountTypes { get; } = data.Tenant<AccountType>(Collections.AccountTypes);
     public TenantRepository<ImportBatch> ImportBatches { get; } = data.Tenant<ImportBatch>(Collections.ImportBatches);
     public TenantRepository<ImportRow> ImportRows { get; } = data.Tenant<ImportRow>(Collections.ImportRows);

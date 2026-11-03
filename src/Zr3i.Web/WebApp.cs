@@ -35,6 +35,7 @@ public static class WebApp
         builder.Services.AddSingleton<AccountTypeService>();
         builder.Services.AddSingleton<OrganisationService>();
         builder.Services.AddSingleton<PlatformService>();
+        builder.Services.AddSingleton<AccessRequestService>();
         builder.Services.AddSingleton<InvitationService>();
         builder.Services.AddSingleton<SignInService>();
         builder.Services.AddSingleton<SessionService>();
@@ -90,6 +91,7 @@ public static class WebApp
         app.MapAuthEndpoints();
         app.MapInvitationEndpoints();
         app.MapImportEndpoints();
+        app.MapAccessRequestEndpoints();
         app.MapMeEndpoints();
 
         return app;
