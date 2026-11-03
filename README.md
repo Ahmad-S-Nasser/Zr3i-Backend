@@ -67,3 +67,13 @@ First start of a new installation: set `Platform:BootstrapAdminEmail`; the API l
 
 Consent belongs to the farmer: a company can only ask, withdrawal takes effect on the next read, and every read or refusal is audited in both organisations. Parcels outside a grant are returned only as a `withheld` count.
 
+## Readability (can a parcel be tested at 10 m?)
+
+`GET /api/organisations/{id}/readability` (`kernel:readability:read`) returns, per size class, how many parcels have at least 8 whole 10 m pixels inside their boundary after a 5 m inward buffer. The share is always per class, never pooled, and "below resolution" is never "no crop".
+
+The size classes come from configuration, not code. Set the edges in feddan (for example in `appsettings`), or the endpoint answers `409 size_classes_not_configured`:
+
+```
+"Verification": { "SizeClassEdgesFeddan": [ 1, 3, 10 ] }
+```
+

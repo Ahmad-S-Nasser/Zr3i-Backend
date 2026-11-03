@@ -68,6 +68,7 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
         if (!check.IsValid) throw new ValidationFailedException(check.Errors);
         if (current is not null && capturedAt < current.CapturedAt) throw new ValidationFailedException("capture_older_than_current");
 
+        var pixels = PixelTest.Evaluate(check.Rings);
         return new BoundaryVersion
         {
             Id = NewId.Create(),   // assigned here so a parcel can point at it before it is written
@@ -85,6 +86,8 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
             MaxLat = check.Bounds.MaxLat,
             Warnings = [.. check.Warnings],
             GeometrySha256 = BoundaryHash.Of(check.Rings),
+            FullPixels = pixels.FullPixels,
+            PixelMethodId = pixels.MethodId,
             Source = provenance.Source,
             CapturedBy = provenance.CapturedBy.Trim(),
             CapturedAt = capturedAt,

@@ -31,10 +31,10 @@ public sealed class WebHarness : IAsyncDisposable
     public static string MongoConnection => Environment.GetEnvironmentVariable("ZR3I_TEST_MONGO") ?? "mongodb://localhost:27017";
     public T Service<T>() where T : notnull => _app.Services.GetRequiredService<T>();
 
-    public static async Task<WebHarness> StartAsync(int authPerMinute = 1000)
+    public static async Task<WebHarness> StartAsync(int authPerMinute = 1000, IDictionary<string, string?>? extraSettings = null)
     {
         var database = "zr3i_test_web_" + Guid.NewGuid().ToString("N");
-        var app = WebApp.Build([], new Dictionary<string, string?>
+        var settings = new Dictionary<string, string?>
         {
             ["Mongo:ConnectionString"] = MongoConnection,
             ["Mongo:Database"] = database,
@@ -43,7 +43,9 @@ public sealed class WebHarness : IAsyncDisposable
             ["RateLimit:AuthPerMinute"] = authPerMinute.ToString(System.Globalization.CultureInfo.InvariantCulture),
             ["Cors:Origins:0"] = AllowedOrigin,
             ["Urls"] = "http://127.0.0.1:0",
-        });
+        };
+        if (extraSettings is not null) foreach (var (k, v) in extraSettings) settings[k] = v;
+        var app = WebApp.Build([], settings);
         await app.StartAsync();
         var address = app.Urls.First();
         return new WebHarness(app, database, new HttpClient { BaseAddress = new Uri(address) });

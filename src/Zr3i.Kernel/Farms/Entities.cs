@@ -97,6 +97,13 @@ public sealed class BoundaryVersion : ITenantEntity
     /// <summary>Fingerprint of the shape (see BoundaryHash), so a re-import of the same boundary is recognised.</summary>
     public string GeometrySha256 { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Whole 10 m pixels inside this boundary after the 5 m inward buffer, under <see cref="PixelMethodId"/>. Derived once from the immutable
+    /// shape and kept with it. Fewer than eight means the parcel is below resolution. Empty method id: not computed (read the shape instead).
+    /// </summary>
+    public int FullPixels { get; set; }
+    public string PixelMethodId { get; set; } = string.Empty;
+
     // Provenance
     public string Source { get; set; } = string.Empty;
     public string CapturedBy { get; set; } = string.Empty;

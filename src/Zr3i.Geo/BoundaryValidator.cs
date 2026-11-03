@@ -78,7 +78,7 @@ public static class BoundaryValidator
             if ((i == 0) != ccw) rings[i].Reverse();
         }
 
-        var polygon = ToUtmPolygon(rings);
+        var polygon = ToUtmPolygon([.. rings.Select(r => (IReadOnlyList<LonLat>)r)]);
         var validity = new IsValidOp(polygon).ValidationError;
         if (validity is not null)
         {
@@ -125,10 +125,10 @@ public static class BoundaryValidator
         return result;
     }
 
-    private static Polygon ToUtmPolygon(List<List<LonLat>> rings)
+    internal static Polygon ToUtmPolygon(IReadOnlyList<IReadOnlyList<LonLat>> rings)
     {
         var factory = new GeometryFactory();
-        LinearRing ToRing(List<LonLat> r) => factory.CreateLinearRing([.. r.Select(p => { var (e, n) = Epsg32636.FromLonLat(p.Lon, p.Lat); return new Coordinate(e, n); })]);
+        LinearRing ToRing(IReadOnlyList<LonLat> r) => factory.CreateLinearRing([.. r.Select(p => { var (e, n) = Epsg32636.FromLonLat(p.Lon, p.Lat); return new Coordinate(e, n); })]);
         return factory.CreatePolygon(ToRing(rings[0]), [.. rings.Skip(1).Select(ToRing)]);
     }
 

@@ -6,6 +6,7 @@ using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
+using Zr3i.Modules.Verification;
 using Zr3i.Kernel.Identity;
 using Zr3i.Web.Auth;
 using Zr3i.Web.Endpoints;
@@ -38,6 +39,9 @@ public static class WebApp
         builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<AccessRequestService>();
         builder.Services.AddSingleton<FarmerService>();
+        builder.Services.AddSingleton<ReadabilityService>();
+        var sizeEdges = config.GetSection("Verification:SizeClassEdgesFeddan").Get<double[]>() ?? [];
+        builder.Services.AddSingleton(new SizeClassConfig(sizeEdges.Length > 0 ? new SizeClassScheme(sizeEdges) : null));   // bad edges stop the start-up
         builder.Services.AddSingleton<ConsentService>();
         builder.Services.AddSingleton<ConsentGate>();
         builder.Services.AddSingleton<SharedDataService>();
@@ -98,6 +102,7 @@ public static class WebApp
         app.MapImportEndpoints();
         app.MapAccessRequestEndpoints();
         app.MapConsentEndpoints();
+        app.MapReadabilityEndpoints();
         app.MapMeEndpoints();
 
         return app;
