@@ -35,6 +35,9 @@ public sealed class KernelStore(DataStore data)
     /// <summary>The consent ledger (hard rule 5): grants and withdrawals are only ever added, never changed.</summary>
     public AppendOnlyRepository<ConsentEvent> ConsentEvents { get; } = data.AppendOnly<ConsentEvent>(Collections.ConsentEvents);
 
+    /// <summary>What each scene says about each parcel: immutable results, only ever added.</summary>
+    public AppendOnlyRepository<ParcelObservation> ParcelObservations { get; } = data.AppendOnly<ParcelObservation>(Collections.ParcelObservations);
+
     public TenantRepository<Scene> Scenes { get; } = data.Tenant<Scene>(Collections.Scenes);
     public TenantRepository<MethodVersion> MethodVersions { get; } = data.Tenant<MethodVersion>(Collections.MethodVersions);
     public TenantRepository<AccessRequest> AccessRequests { get; } = data.Tenant<AccessRequest>(Collections.AccessRequests);

@@ -42,6 +42,7 @@ public static class WebApp
         builder.Services.AddSingleton<AccessRequestService>();
         builder.Services.AddSingleton<MethodRegistry>();
         builder.Services.AddSingleton<SceneCatalog>();
+        builder.Services.AddSingleton(sp => new IngestPlanner(sp.GetRequiredService<SceneCatalog>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new DiscoveryPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<FarmerService>();
         builder.Services.AddSingleton<ReadabilityService>();

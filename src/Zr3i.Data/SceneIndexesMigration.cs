@@ -12,5 +12,8 @@ public sealed class SceneIndexesMigration : IMigration
         await IndexBuilder.Ascending(database, Collections.Scenes, true, ct, "TenantId", "SceneId");
         await IndexBuilder.Ascending(database, Collections.Scenes, false, ct, "TenantId", "Tile", "SensingTime");
         await IndexBuilder.Ascending(database, Collections.Scenes, false, ct, "TenantId", "SensingTime");
+        await IndexBuilder.Ascending(database, Collections.ParcelObservations, true, ct, "TenantId", "ParcelId", "BoundaryId", "SceneId");
+        await IndexBuilder.Ascending(database, Collections.ParcelObservations, false, ct, "TenantId", "SceneId");
+        await IndexBuilder.Ascending(database, Collections.ParcelObservations, false, ct, "TenantId", "ParcelId", "SensingTime");
     }
 }

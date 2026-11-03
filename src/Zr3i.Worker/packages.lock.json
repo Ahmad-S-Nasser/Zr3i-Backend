@@ -37,6 +37,35 @@
         "resolved": "1.6.1",
         "contentHash": "4H/f2uYJOZ+YObZjpY9ABrKZI+JNw3uizp6oMzTXwDw6F+2qIPhpRl/1t68O/6e98+vqNiYGu+lswmwdYUy3gg=="
       },
+      "MaxRev.Gdal.Core": {
+        "type": "Transitive",
+        "resolved": "3.13.3.611",
+        "contentHash": "rioZ1DomXfWIh3R1dUJZSfNLjV9PCsUdCLYmFlfEa00hUc//R+kC710mfLtYCzyWCuYqDaeD7FHzay8uxzVeQw=="
+      },
+      "MaxRev.Gdal.LinuxRuntime.Minimal": {
+        "type": "Transitive",
+        "resolved": "3.13.3.611",
+        "contentHash": "nwFdYc//woYlQr+VmKxWAg9WFs1/6sBWvbvxMt9mri8HJO4o2jlr0IEDbIzOCDAZJKD13wN5k8UspfVqiqEFxw==",
+        "dependencies": {
+          "MaxRev.Gdal.LinuxRuntime.Minimal.arm64": "3.13.3.611",
+          "MaxRev.Gdal.LinuxRuntime.Minimal.x64": "3.13.3.611"
+        }
+      },
+      "MaxRev.Gdal.LinuxRuntime.Minimal.arm64": {
+        "type": "Transitive",
+        "resolved": "3.13.3.611",
+        "contentHash": "gkBotOx4o78VJmcQrifRmGEEFIvEtZLLBl1TEM66QseJSOgwr01p3oibgqVAPLP3sWxkN4GNV76IcWlPb77J2Q=="
+      },
+      "MaxRev.Gdal.LinuxRuntime.Minimal.x64": {
+        "type": "Transitive",
+        "resolved": "3.13.3.611",
+        "contentHash": "IpJaHMg3G7Uh7Y9jb6W7FhnD2sXWf/oRlnlCUNdwCoV9SaNXGHQbtvm85ZFY+J/N3pIysju/Jw7v5vlF6EJxLQ=="
+      },
+      "MaxRev.Gdal.WindowsRuntime.Minimal": {
+        "type": "Transitive",
+        "resolved": "3.13.3.611",
+        "contentHash": "bxWqIGnuhX7MhDI5vmjwXO/gnf2pVmrCCeoD50GTXOnI9PzaiWTGFHDxJrD0kDeyxd8nAW7D9LjcRcodRE9oWw=="
+      },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
         "resolved": "10.0.2",
@@ -351,6 +380,9 @@
       "zr3i.imagery": {
         "type": "Project",
         "dependencies": {
+          "MaxRev.Gdal.Core": "[3.13.3.611, )",
+          "MaxRev.Gdal.LinuxRuntime.Minimal": "[3.13.3.611, )",
+          "MaxRev.Gdal.WindowsRuntime.Minimal": "[3.13.3.611, )",
           "Zr3i.Geo": "[1.0.0, )",
           "Zr3i.Kernel": "[1.0.0, )"
         }

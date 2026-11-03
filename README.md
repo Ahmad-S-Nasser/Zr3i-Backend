@@ -94,3 +94,7 @@ A method (for example `ZR3I-R0-2026-01`) is a versioned set of parameters. Each 
 
 A test that talks to the real Earth Search service is off by default; run it with `ZR3I_NETWORK_TESTS=1 dotnet test --filter Category=Network`.
 
+`POST /api/organisations/{id}/imagery/ingest` (`kernel:imagery:write`, body `{ "from", "to", "maxCloudCover", "tile" }`) queues one job per catalogue scene in the period; the worker reads each scene for the organisation's parcels and records, per parcel and scene, how many whole pixels are usable and whether the scene is readable. `GET /api/organisations/{id}/parcels/{parcelId}/observations` (`kernel:imagery:read`) returns them with their provenance (scene and item hash, boundary version, methods, reader, a hash of the pixel values). A parcel too small to test is reported as `below_resolution`, never as "no crop". Results made under a draft method say so.
+
+The raster reader needs a CA certificate file for HTTPS: set `ZR3I_CA_BUNDLE` (on Linux the system store is used). `ZR3I_NETWORK_TESTS=1` also runs a test that reads the real spike scene.
+

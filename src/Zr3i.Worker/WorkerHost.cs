@@ -58,6 +58,11 @@ internal static class JobHandlers
         services.AddSingleton<ISceneSource>(sp => new StacClient(sp.GetRequiredService<HttpClient>()));
         services.AddSingleton<SceneCatalog>();
         services.AddSingleton<IJobHandler, DiscoverHandler>();
+
+        // Reading scenes for parcels: GDAL (bundled), the method registry for provenance, and the ingest handler.
+        services.AddSingleton<IBandReader>(_ => new GdalBandReader());
+        services.AddSingleton<Zr3i.Kernel.Methods.MethodRegistry>();
+        services.AddSingleton<IJobHandler, IngestHandler>();
     }
 }
 

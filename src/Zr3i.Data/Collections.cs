@@ -28,4 +28,5 @@ public static class Collections
     public const string ConsentEvents = "consent_events";
     public const string MethodVersions = "method_versions";
     public const string Scenes = "scenes";
+    public const string ParcelObservations = "parcel_observations";
 }

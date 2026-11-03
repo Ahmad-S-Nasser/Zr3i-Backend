@@ -27,7 +27,6 @@
     <ProjectReference Include="..\..\src\Zr3i.Data\Zr3i.Data.csproj" />
     <ProjectReference Include="..\..\src\Zr3i.Web\Zr3i.Web.csproj" />
     <ProjectReference Include="..\..\src\Zr3i.Worker\Zr3i.Worker.csproj" />
-    <ProjectReference Include="..\..\src\Zr3i.Imagery\Zr3i.Imagery.csproj" />
   </ItemGroup>
 
 </Project>
