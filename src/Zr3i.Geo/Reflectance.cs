@@ -39,3 +39,29 @@ public static class Indices
     /// <summary>(a - b) / (a + b), as NDVI uses with B8 and B4. Null when both are zero.</summary>
     public static double? NormalisedDifference(double a, double b) => a + b == 0 ? null : (a - b) / (a + b);
 }
+
+/// <param name="Count">Pixels that contributed.</param>
+/// <param name="NoData">Pixels left out because a band was 0 (no data).</param>
+/// <param name="Implausible">Pixels left out because the converted reflectance was not physically possible.</param>
+public sealed record NdviSummary(int Count, int NoData, int Implausible, double Median, double Mean, double Min, double Max)
+{
+    /// <summary>NDVI = (NIR - red) / (NIR + red) from reflectance, over the given (B8, B4) digital numbers. Null when no pixel is valid: no value is never zero.</summary>
+    public static NdviSummary? Of(IEnumerable<(int Nir, int Red)> pixels, SceneRadiometry scene)
+    {
+        var values = new List<double>();
+        int noData = 0, implausible = 0;
+        foreach (var (nirDn, redDn) in pixels)
+        {
+            if (Reflectance.FromDn(nirDn, scene) is not { } nir || Reflectance.FromDn(redDn, scene) is not { } red) { noData++; continue; }
+            if (!Reflectance.IsPlausible(nir) || !Reflectance.IsPlausible(red)) { implausible++; continue; }
+            if (Indices.NormalisedDifference(nir, red) is not { } v) { noData++; continue; }
+            values.Add(v);
+        }
+
+        if (values.Count == 0) return null;
+        values.Sort();
+        var mid = values.Count / 2;
+        var median = values.Count % 2 == 1 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+        return new NdviSummary(values.Count, noData, implausible, median, values.Average(), values[0], values[^1]);
+    }
+}

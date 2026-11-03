@@ -138,6 +138,20 @@ public sealed class IngestHandler(KernelStore store, IBandReader reader, MethodR
         obs.Bands = [.. AllBands];
         obs.PixelStackSha256 = Convert.ToHexString(hash.GetHashAndReset());
         if (!obs.Readable) counts.NotReadable++;
+        else
+        {
+            var usable = lattice.Where(p => Zr3i.Geo.PixelTestRules.UsableClasses.Contains(scl.ValueAt(p.Col, p.Row)))
+                .Select(p => (byBand["nir"].ValueAt(p.Col, p.Row), byBand["red"].ValueAt(p.Col, p.Row)));
+            if (NdviSummary.Of(usable, new SceneRadiometry(scene.BoaOffsetApplied, scene.ProcessingBaseline)) is { } ndvi)
+            {
+                obs.NdviPixels = ndvi.Count;
+                obs.NdviExcluded = ndvi.NoData + ndvi.Implausible;
+                obs.NdviMedian = ndvi.Median;
+                obs.NdviMean = ndvi.Mean;
+                obs.NdviMin = ndvi.Min;
+                obs.NdviMax = ndvi.Max;
+            }
+        }
         return obs;
     }
 

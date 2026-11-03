@@ -40,6 +40,15 @@ public sealed class ParcelObservation : ITenantEntity
     /// <summary>SHA-256 over the digital numbers of every whole pixel in all five bands, in pixel order. Null when no imagery was read (below resolution).</summary>
     public string? PixelStackSha256 { get; set; }
 
+    // Features (W3-2). Only for a readable scene, over its usable pixels, from reflectance (offset rule in Reflectance). Null means "not
+    // established" (unreadable scene, or no valid pixel), never zero. NDMI is not computed: its formula is still undecided in the method.
+    public int? NdviPixels { get; set; }
+    public int? NdviExcluded { get; set; }
+    public double? NdviMedian { get; set; }
+    public double? NdviMean { get; set; }
+    public double? NdviMin { get; set; }
+    public double? NdviMax { get; set; }
+
     // Provenance
     public string SceneItemSha256 { get; set; } = string.Empty;
     public List<string> Bands { get; set; } = [];

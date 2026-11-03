@@ -47,6 +47,7 @@ public static class ImageryEndpoints
                 {
                     sceneId = o.SceneId, sensingTime = o.SensingTime, boundaryId = o.BoundaryId, fullPixels = o.FullPixels, usablePixels = o.UsablePixels,
                     lostPixels = o.LostPixels, lostShare = o.LostShare, readable = o.Readable, reason = o.Reason, sclHistogram = o.SclHistogram,
+                    ndvi = o.NdviMedian is null ? null : new { pixels = o.NdviPixels, excluded = o.NdviExcluded, median = o.NdviMedian, mean = o.NdviMean, min = o.NdviMin, max = o.NdviMax },
                     pixelStackSha256 = o.PixelStackSha256, sceneItemSha256 = o.SceneItemSha256, pixelMethodId = o.PixelMethodId,
                     method = new { id = o.MethodId, version = o.MethodVersion, state = o.MethodState }, reader = o.Reader, attribution = o.Attribution,
                 }));

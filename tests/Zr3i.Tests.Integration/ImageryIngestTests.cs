@@ -111,6 +111,41 @@ public class ImageryIngestTests(MongoFixture mongo)
     }
 
     [Fact]
+    public async Task ReadableSceneGetsNdviFromUsablePixelsOnlyAndNeverFromCloudedOnes()
+    {
+        var k = await NewAsync();
+        await k.Scenes.UpsertAsync([Tile36RTV()]);
+        await ParcelAsync(k, A, 150, 0, 0, "p1");
+        // Every fifth 20 m column is cloud (class 9, 20 percent lost, still readable); NIR 6000 / red 1000 everywhere. The count must equal the
+        // usable pixels, so a lost pixel leaking into the summary would raise it above UsablePixels.
+        var reader = new FakeBandReader((c, _) => c % 5 == 0 ? 9 : 4, (band, _, _) => band == "nir" ? 6000 : 1000);
+
+        await RunAsync(k, reader, A, "S2C_36RTV_20261027_0_L2A");
+
+        var o = (await k.Store.ParcelObservations.FindAsync(A, _ => true)).Single();
+        Assert.True(o.Readable);
+        Assert.Equal(o.UsablePixels, o.NdviPixels);
+        Assert.Equal(0, o.NdviExcluded);
+        Assert.Equal(5.0 / 7, o.NdviMedian!.Value, 12);
+        Assert.Equal((o.NdviMin, o.NdviMax), (o.NdviMedian, o.NdviMedian));
+    }
+
+    [Fact]
+    public async Task AnUnreadableSceneHasNoNdviRatherThanAZero()
+    {
+        var k = await NewAsync();
+        await k.Scenes.UpsertAsync([Tile36RTV()]);
+        await ParcelAsync(k, A, 150, 0, 0, "p1");
+
+        await RunAsync(k, new FakeBandReader((_, _) => 9), A, "S2C_36RTV_20261027_0_L2A");
+
+        var o = (await k.Store.ParcelObservations.FindAsync(A, _ => true)).Single();
+        Assert.False(o.Readable);
+        Assert.Null(o.NdviMedian);
+        Assert.Null(o.NdviPixels);
+    }
+
+    [Fact]
     public async Task ATinyParcelIsRecordedAsBelowResolutionWithoutReadingAnyImagery()
     {
         var k = await NewAsync();
