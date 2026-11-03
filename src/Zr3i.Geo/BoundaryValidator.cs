@@ -33,7 +33,8 @@ public sealed record BoundaryCheck(
     double AreaM2,
     double AreaFeddan,
     LonLat Centroid,
-    Bounds Bounds)
+    Bounds Bounds,
+    double PerimeterM = 0)
 {
     internal static BoundaryCheck Rejected(string code) =>
         new(false, [code], [], [], 0, 0, default, default);
@@ -103,7 +104,7 @@ public static class BoundaryValidator
         if (Math.Abs(GridScaleFactor(centroid.Lon, centroid.Lat) - 1) > BoundaryRules.DistortionWarningFraction) warnings.Add("projection_distortion");
 
         return new BoundaryCheck(true, [], warnings, [.. rings.Select(r => (IReadOnlyList<LonLat>)r)], area,
-            area / GeoConstants.SquareMetresPerFeddan, new LonLat(centroid.Lon, centroid.Lat), bounds);
+            area / GeoConstants.SquareMetresPerFeddan, new LonLat(centroid.Lon, centroid.Lat), bounds, polygon.Length);
     }
 
     /// <summary>Shoelace area in degrees: positive for counter-clockwise. Used only for orientation, never for measuring.</summary>

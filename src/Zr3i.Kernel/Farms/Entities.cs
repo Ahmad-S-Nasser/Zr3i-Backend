@@ -84,6 +84,9 @@ public sealed class BoundaryVersion : ITenantEntity
     public GeoJsonPolygon Geometry { get; set; } = new();
     public double AreaM2 { get; set; }
     public double AreaFeddan { get; set; }
+
+    /// <summary>Boundary length in metres on the EPSG:32636 grid (holes included): the other input to the area-gap noise.</summary>
+    public double PerimeterM { get; set; }
     public string AreaMethodId { get; set; } = string.Empty;
     public int AreaEpsg { get; set; }
     public double CentroidLon { get; set; }

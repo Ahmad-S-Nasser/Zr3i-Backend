@@ -26,4 +26,5 @@ public static class Collections
     public const string Farmers = "farmers";
     public const string ConsentRequests = "consent_requests";
     public const string ConsentEvents = "consent_events";
+    public const string MethodVersions = "method_versions";
 }

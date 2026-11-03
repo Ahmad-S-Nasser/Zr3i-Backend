@@ -76,6 +76,7 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
             Geometry = GeoJsonPolygon.FromRings(check.Rings.Select(r => r.Select(p => (p.Lon, p.Lat)))),
             AreaM2 = check.AreaM2,
             AreaFeddan = check.AreaFeddan,
+            PerimeterM = check.PerimeterM,
             AreaMethodId = GeoConstants.AreaMethodId,
             AreaEpsg = GeoConstants.AreaEpsg,
             CentroidLon = check.Centroid.Lon,

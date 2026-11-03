@@ -64,6 +64,7 @@ public class BoundaryTests(MongoFixture mongo)
         var current = await k.Boundaries.GetCurrentAsync(A, parcel.Id);
         Assert.Equal(second.Id, current!.Id);
         Assert.Equal(22500.0, current.AreaM2, precision: 1);
+        Assert.Equal(600.0, current.PerimeterM, precision: 1);          // a 150 m square: the other input to the area-gap noise
 
         var history = await k.Boundaries.GetHistoryAsync(A, parcel.Id);
         Assert.Equal([first.Id, second.Id], history.Select(h => h.Id));

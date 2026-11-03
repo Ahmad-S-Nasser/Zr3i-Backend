@@ -4,6 +4,7 @@ using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
+using Zr3i.Kernel.Methods;
 using Zr3i.Kernel.Identity;
 
 namespace Zr3i.Kernel;
@@ -33,6 +34,7 @@ public sealed class KernelStore(DataStore data)
     /// <summary>The consent ledger (hard rule 5): grants and withdrawals are only ever added, never changed.</summary>
     public AppendOnlyRepository<ConsentEvent> ConsentEvents { get; } = data.AppendOnly<ConsentEvent>(Collections.ConsentEvents);
 
+    public TenantRepository<MethodVersion> MethodVersions { get; } = data.Tenant<MethodVersion>(Collections.MethodVersions);
     public TenantRepository<AccessRequest> AccessRequests { get; } = data.Tenant<AccessRequest>(Collections.AccessRequests);
     public TenantRepository<AccountType> AccountTypes { get; } = data.Tenant<AccountType>(Collections.AccountTypes);
     public TenantRepository<ImportBatch> ImportBatches { get; } = data.Tenant<ImportBatch>(Collections.ImportBatches);

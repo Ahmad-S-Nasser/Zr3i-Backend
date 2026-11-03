@@ -77,3 +77,14 @@ The size classes come from configuration, not code. Set the edges in feddan (for
 "Verification": { "SizeClassEdgesFeddan": [ 1, 3, 10 ] }
 ```
 
+## Methods
+
+A method (for example `ZR3I-R0-2026-01`) is a versioned set of parameters. Each parameter has a status (`derived`, `specified`, `starting_rule` or `undecided`) and a source. A draft can be edited; it can only be frozen when nothing is undecided and every provisional rule is approved by name, and a frozen version is sealed with a SHA-256 hash and never changes. Frozen reports may cite only a frozen version.
+
+| Route | Access | Purpose |
+| --- | --- | --- |
+| `GET /api/methods`, `GET /api/methods/{id}?version=` | signed in | the methodology: every parameter with its status and source, and the seal of a frozen version |
+| `PUT /api/platform/methods/{id}/{version}/parameters/{key}` | `platform:methods:manage` | set a parameter on a draft |
+| `POST /api/platform/methods/{id}/{version}/freeze` | `platform:methods:manage` | freeze a draft, naming who approves each provisional rule |
+| `POST /api/platform/methods/{id}/{version}/new-draft` | `platform:methods:manage` | open the next version as a copy |
+

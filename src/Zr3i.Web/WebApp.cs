@@ -6,6 +6,7 @@ using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
+using Zr3i.Kernel.Methods;
 using Zr3i.Modules.Verification;
 using Zr3i.Kernel.Identity;
 using Zr3i.Web.Auth;
@@ -38,6 +39,7 @@ public static class WebApp
         builder.Services.AddSingleton<OrganisationService>();
         builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<AccessRequestService>();
+        builder.Services.AddSingleton<MethodRegistry>();
         builder.Services.AddSingleton<FarmerService>();
         builder.Services.AddSingleton<ReadabilityService>();
         var sizeEdges = config.GetSection("Verification:SizeClassEdgesFeddan").Get<double[]>() ?? [];
@@ -80,6 +82,9 @@ public static class WebApp
         if (config.GetValue("Mongo:MigrateOnStartup", false))
             app.Services.GetRequiredService<DataStore>().MigrateAsync().GetAwaiter().GetResult();
 
+        // The built-in method drafts (ZR3I-R0-2026-01) exist from the first start.
+        app.Services.GetRequiredService<MethodRegistry>().EnsureBuiltInsAsync().GetAwaiter().GetResult();
+
         // First start of a new installation: invite the first Zr3i administrator. The token is shown once, here, and not stored in clear.
         if (config["Platform:BootstrapAdminEmail"] is { Length: > 0 } adminEmail)
         {
@@ -103,6 +108,7 @@ public static class WebApp
         app.MapAccessRequestEndpoints();
         app.MapConsentEndpoints();
         app.MapReadabilityEndpoints();
+        app.MapMethodEndpoints();
         app.MapMeEndpoints();
 
         return app;
