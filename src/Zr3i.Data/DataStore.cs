@@ -1,5 +1,6 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Zr3i.Data.Jobs;
 
 namespace Zr3i.Data;
 
@@ -19,6 +20,12 @@ public sealed class DataStore(IMongoDatabase database)
         return new DataStore(new MongoClient(settings).GetDatabase(databaseName));
     }
 
+    /// <summary>The tenant-scoped side of the job queue (enqueue, look at, cancel).</summary>
+    public JobQueue Jobs { get; } = new(database.GetCollection<Job>(Collections.Jobs));
+
+    /// <summary>The worker side of the queue. Only the worker host creates one.</summary>
+    public JobClaimer CreateJobClaimer(JobQueueOptions? options = null) => new(database, options ?? JobQueueOptions.Default);
+
     public TenantRepository<T> Tenant<T>(string collection) where T : class, ITenantEntity =>
         new(database.GetCollection<T>(collection));
 
@@ -27,7 +34,7 @@ public sealed class DataStore(IMongoDatabase database)
 
     /// <summary>Applies the Kernel migrations (indexes). Modules add theirs as they appear.</summary>
     public Task<IReadOnlyList<string>> MigrateAsync(CancellationToken ct = default) =>
-        new MigrationRunner(database, [new KernelIndexesMigration(), new FarmIndexesMigration()]).RunAsync(ct);
+        new MigrationRunner(database, [new KernelIndexesMigration(), new FarmIndexesMigration(), new JobIndexesMigration()]).RunAsync(ct);
 
     public async Task<bool> PingAsync(CancellationToken ct = default)
     {

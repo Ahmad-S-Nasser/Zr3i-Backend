@@ -17,4 +17,5 @@ public static class Collections
     public const string ParcelSeasons = "parcel_seasons";
     public const string Boundaries = "boundaries";
     public const string CustomFieldDefinitions = "custom_field_definitions";
+    public const string Jobs = "jobs";
 }
