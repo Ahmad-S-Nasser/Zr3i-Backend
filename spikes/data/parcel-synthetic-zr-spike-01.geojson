@@ -1,0 +1,40 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ZR-SPIKE-01",
+        "declared_feddan": 10.0,
+        "note": "SYNTHETIC parcel for the W1-5 raster spike. Not a real field."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              30.9488895,
+              30.799218
+            ],
+            [
+              30.9509881,
+              30.7989645
+            ],
+            [
+              30.9513006,
+              30.8008372
+            ],
+            [
+              30.9491334,
+              30.8010027
+            ],
+            [
+              30.9488895,
+              30.799218
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

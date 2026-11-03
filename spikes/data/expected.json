@@ -1,0 +1,16 @@
+{
+  "planar_area_m2_epsg32636": 42009.08453946447,
+  "planar_area_feddan": 10.00018675820361,
+  "geodesic_area_m2": 42002.82481263578,
+  "inner5m_area_m2": 38008.76881888617,
+  "pixels_centre_in_polygon": 422,
+  "pixels_whole_in_polygon": 374,
+  "pixels_centre_in_inner5m": 381,
+  "pixels_whole_in_inner5m": 337,
+  "bbox_epsg32636": [
+    303759.4084504845,
+    3409117.8353845403,
+    303993.42609598325,
+    3409347.0343262153
+  ]
+}

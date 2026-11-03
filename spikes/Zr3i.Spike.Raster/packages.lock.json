@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "MaxRev.Gdal.Core": {
+        "type": "Direct",
+        "requested": "[3.13.3.611, )",
+        "resolved": "3.13.3.611",
+        "contentHash": "rioZ1DomXfWIh3R1dUJZSfNLjV9PCsUdCLYmFlfEa00hUc//R+kC710mfLtYCzyWCuYqDaeD7FHzay8uxzVeQw=="
+      },
+      "MaxRev.Gdal.WindowsRuntime.Minimal": {
+        "type": "Direct",
+        "requested": "[3.13.3.611, )",
+        "resolved": "3.13.3.611",
+        "contentHash": "bxWqIGnuhX7MhDI5vmjwXO/gnf2pVmrCCeoD50GTXOnI9PzaiWTGFHDxJrD0kDeyxd8nAW7D9LjcRcodRE9oWw=="
+      },
+      "NetTopologySuite": {
+        "type": "Direct",
+        "requested": "[2.6.0, )",
+        "resolved": "2.6.0",
+        "contentHash": "1B1OTacTd4QtFyBeuIOcThwSSLUdRZU3bSFIwM8vk36XiZlBMi3K36u74e4OqwwHRHUuJC1PhbDx4hyI266X1Q=="
+      },
+      "ProjNET": {
+        "type": "Direct",
+        "requested": "[2.1.0, )",
+        "resolved": "2.1.0",
+        "contentHash": "4F0xEYe+cQCgWgnf1UaDlRPFm9RxTaSFt4C/axNnCgSCNWU1AFDNvTyVdN/RwNmTYoGEWxo4sOYMQrW9kQtwpg=="
+      }
+    }
+  }
+}
