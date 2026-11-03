@@ -46,6 +46,30 @@ public sealed class TenantRepository<T>(IMongoCollection<T> collection) where T 
         }
     }
 
+    /// <summary>Replaces many rows (matched by id inside the tenant) in one round trip. Returns how many existed. For bulk updates.</summary>
+    public async Task<long> ReplaceManyAsync(TenantScope scope, IReadOnlyList<T> entities, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        if (entities.Count == 0) return 0;
+
+        var models = new List<WriteModel<T>>(entities.Count);
+        foreach (var entity in entities)
+        {
+            entity.TenantId = scope.TenantId;
+            models.Add(new ReplaceOneModel<T>(_rows.ById(scope, entity.Id), entity));
+        }
+
+        try
+        {
+            var result = await _rows.Collection.BulkWriteAsync(models, new BulkWriteOptions { IsOrdered = false }, ct).ConfigureAwait(false);
+            return result.MatchedCount;
+        }
+        catch (MongoBulkWriteException e) when (e.WriteErrors.Count > 0 && e.WriteErrors.All(w => w.Category == ServerErrorCategory.DuplicateKey))
+        {
+            throw new DuplicateKeyException(e);
+        }
+    }
+
     /// <summary>Deletes every row of the tenant that matches. Returns how many were removed.</summary>
     public async Task<long> DeleteWhereAsync(TenantScope scope, Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
         (await _rows.Collection.DeleteManyAsync(_rows.ForTenant(scope, predicate), ct).ConfigureAwait(false)).DeletedCount;

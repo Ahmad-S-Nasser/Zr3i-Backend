@@ -35,3 +35,19 @@ Integration tests use a throwaway database on `ZR3I_TEST_MONGO` (default `mongod
 | `POST /api/organisations/{id}/invitations` | bearer, `kernel:users:manage` | invite a person, returns the link token |
 
 Auth routes are rate limited per client address.
+
+## Bulk import
+
+Run the API and the worker (`dotnet run --project src/Zr3i.Worker`) together. Upload a CSV, wait until it is `validated`, read the error report, then commit.
+
+| Route | Needs | Purpose |
+| --- | --- | --- |
+| `POST /api/organisations/{id}/imports?fileName=` (body: the CSV) | `kernel:imports:write` | store the file and queue validation (202) |
+| `GET /api/organisations/{id}/imports`, `GET .../imports/{batch}` | `kernel:imports:read` | list, and status with counts and progress |
+| `GET .../imports/{batch}/errors`, `GET .../imports/{batch}/errors.csv` | `kernel:imports:read` | the error report as JSON (paged) or CSV |
+| `POST .../imports/{batch}/commit`, `POST .../imports/{batch}/discard` | `kernel:imports:write` | apply the valid rows (202), or throw the batch away |
+
+CSV: UTF-8, comma, semicolon or tab. One row per parcel and season. Required columns: `parcel_external_id`, `farm_external_id`, `farm_name`. Optional: `parcel_label`, `portfolio_external_id`, `portfolio_name`, `governorate`, `markaz`, `village`, `cadastral_ref`, `season`, `declared_crop`, `declared_area_feddan`, `declared_sowing_date`, `declared_source`, `boundary_geojson` (a GeoJSON Polygon), `boundary_source`, `captured_by`, `captured_at`, `accuracy_m`, and custom fields as `farm.key`, `parcel.key`, `portfolio.key`, `season.key`.
+
+Importing the same file again changes nothing. A blank cell never erases a value already stored. Errors are stable codes (for example `invalid_number`, `self_intersection`, `parcel_belongs_to_other_farm`); the wording lives in the frontend.
+

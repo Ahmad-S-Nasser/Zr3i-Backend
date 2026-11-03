@@ -31,6 +31,32 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
         var parcel = await store.Parcels.GetAsync(scope, parcelId ?? string.Empty, ct) ?? throw new NotFoundException("parcel", parcelId ?? string.Empty);
 
         var now = clock.GetUtcNow().UtcDateTime;
+        var current = Tip(await HistoryAsync(scope, parcel.Id, ct));
+        var boundary = CreateVersion(parcel.Id, check, provenance, current, now, actorUserId);
+        await store.Boundaries.InsertAsync(scope, boundary, ct);
+
+        parcel.CurrentBoundaryId = boundary.Id;
+        await store.Parcels.ReplaceAsync(scope, parcel, ct);
+        await audit.RecordAsync(scope, actorUserId, "boundary.added", "boundary", boundary.Id, ct: ct);
+        return boundary;
+    }
+
+    /// <summary>Every boundary of the parcel, oldest capture first.</summary>
+    public Task<IReadOnlyList<BoundaryVersion>> GetHistoryAsync(TenantScope scope, string parcelId, CancellationToken ct = default) =>
+        HistoryAsync(scope, parcelId, ct);
+
+    /// <summary>The latest capture that nothing supersedes, worked out from the boundaries themselves, not from the parcel's cached pointer.</summary>
+    public async Task<BoundaryVersion?> GetCurrentAsync(TenantScope scope, string parcelId, CancellationToken ct = default) =>
+        Tip(await HistoryAsync(scope, parcelId, ct));
+
+    /// <summary>
+    /// Builds the next boundary version for a parcel, enforcing the provenance and ordering rules, without writing anything.
+    /// <paramref name="current"/> is the boundary being superseded, if any.
+    /// </summary>
+    /// <exception cref="ValidationFailedException">Provenance codes, the polygon's codes, or "capture_older_than_current".</exception>
+    public static BoundaryVersion CreateVersion(
+        string parcelId, BoundaryCheck check, BoundaryProvenance provenance, BoundaryVersion? current, DateTime now, string actorUserId)
+    {
         var capturedAt = provenance.CapturedAt.Kind == DateTimeKind.Local ? provenance.CapturedAt.ToUniversalTime() : DateTime.SpecifyKind(provenance.CapturedAt, DateTimeKind.Utc);
         var errors = new List<string>();
         if (!BoundarySources.All.Contains(provenance.Source)) errors.Add("invalid_source");
@@ -40,13 +66,12 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
         if (errors.Count > 0) throw new ValidationFailedException(errors);
 
         if (!check.IsValid) throw new ValidationFailedException(check.Errors);
-
-        var current = Tip(await HistoryAsync(scope, parcel.Id, ct));
         if (current is not null && capturedAt < current.CapturedAt) throw new ValidationFailedException("capture_older_than_current");
 
-        var boundary = new BoundaryVersion
+        return new BoundaryVersion
         {
-            ParcelId = parcel.Id,
+            Id = NewId.Create(),   // assigned here so a parcel can point at it before it is written
+            ParcelId = parcelId,
             Geometry = GeoJsonPolygon.FromRings(check.Rings.Select(r => r.Select(p => (p.Lon, p.Lat)))),
             AreaM2 = check.AreaM2,
             AreaFeddan = check.AreaFeddan,
@@ -68,21 +93,7 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
             CreatedAt = now,
             CreatedBy = actorUserId,
         };
-        await store.Boundaries.InsertAsync(scope, boundary, ct);
-
-        parcel.CurrentBoundaryId = boundary.Id;
-        await store.Parcels.ReplaceAsync(scope, parcel, ct);
-        await audit.RecordAsync(scope, actorUserId, "boundary.added", "boundary", boundary.Id, ct: ct);
-        return boundary;
     }
-
-    /// <summary>Every boundary of the parcel, oldest capture first.</summary>
-    public Task<IReadOnlyList<BoundaryVersion>> GetHistoryAsync(TenantScope scope, string parcelId, CancellationToken ct = default) =>
-        HistoryAsync(scope, parcelId, ct);
-
-    /// <summary>The latest capture that nothing supersedes, worked out from the boundaries themselves, not from the parcel's cached pointer.</summary>
-    public async Task<BoundaryVersion?> GetCurrentAsync(TenantScope scope, string parcelId, CancellationToken ct = default) =>
-        Tip(await HistoryAsync(scope, parcelId, ct));
 
     private async Task<IReadOnlyList<BoundaryVersion>> HistoryAsync(TenantScope scope, string parcelId, CancellationToken ct) =>
         [.. (await store.Boundaries.FindAsync(scope, b => b.ParcelId == parcelId, ct: ct))

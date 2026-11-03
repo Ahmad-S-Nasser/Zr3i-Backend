@@ -33,11 +33,11 @@ public static class ImportCsv
         };
     }
 
-    /// <summary>A square on a grid of 300 m cells (so no two overlap) as GeoJSON in lon/lat.</summary>
+    /// <summary>A square on a grid of 300 m cells, 300 to a row (so no two overlap, and 100,000 fit inside Egypt), as GeoJSON in lon/lat.</summary>
     public static string Square(int i, double side)
     {
-        var e = 300000 + (i % 100) * 300;
-        var n = 3400000 + (i / 100) * 300;
+        var e = 300000 + (i % 300) * 300;
+        var n = 3400000 + (i / 300) * 300;
         var coords = new (double, double)[] { (e, n), (e + side, n), (e + side, n + side), (e, n + side), (e, n) }
             .Select(p => { var (lon, lat) = Epsg32636.ToLonLat(p.Item1, p.Item2); return $"[{lon.ToString("F7", CultureInfo.InvariantCulture)},{lat.ToString("F7", CultureInfo.InvariantCulture)}]"; });
         return "{\"type\":\"Polygon\",\"coordinates\":[[" + string.Join(",", coords) + "]]}";

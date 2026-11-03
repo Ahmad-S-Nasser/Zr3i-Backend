@@ -6,14 +6,13 @@ using Zr3i.Kernel.Jobs;
 namespace Zr3i.Kernel.Imports;
 
 /// <summary>
-/// Applies the valid rows of a validated batch, in file order. Every row is marked applied (or failed) the moment it is done,
-/// so a job that is interrupted and run again carries on where it stopped and never applies a row twice. A row that cannot be
-/// applied is reported and skipped; it does not stop the others.
+/// Applies the valid rows of a validated batch, in file order, a page at a time. Every row is marked applied (or failed) when its
+/// page is done, so a job that is interrupted and run again carries on where it stopped and never applies a row twice. A row that
+/// cannot be applied is reported and skipped; it does not stop the others.
 /// </summary>
-public sealed class ImportCommitHandler(KernelStore store, BoundaryService boundaries, AuditService audit, TimeProvider clock) : IJobHandler
+public sealed class ImportCommitHandler(KernelStore store, AuditService audit, TimeProvider clock) : IJobHandler
 {
     private const int Page = 500;
-    private const int ProgressEvery = 100;
 
     public string Type => ImportService.CommitJobType;
 
@@ -30,7 +29,7 @@ public sealed class ImportCommitHandler(KernelStore store, BoundaryService bound
 
         var definitions = await store.CustomFieldDefinitions.FindAsync(scope, _ => true, ct: ct);
         var validator = new ImportRowValidator(definitions);
-        var applier = new ImportRowApplier(store, boundaries, audit, clock, scope, batch.CreatedBy, batch);
+        var applier = new ImportPageApplier(store, audit, clock, scope, batch.CreatedBy, batch);
 
         var total = batch.ValidRows;
         var done = total - (int)await store.ImportRows.CountAsync(scope, r => r.BatchId == batchId && r.Status == ImportRowStatus.Valid, ct);
@@ -38,12 +37,9 @@ public sealed class ImportCommitHandler(KernelStore store, BoundaryService bound
         do
         {
             var page = await store.ImportRows.FindPageAsync(scope, r => r.BatchId == batchId && r.Status == ImportRowStatus.Valid, cursor, Page, ct);
-            foreach (var row in page.Items)
-            {
-                await ApplyRowAsync(scope, batch, validator, applier, row, ct);
-                if (++done % ProgressEvery == 0) await context.ReportProgressAsync(done, total, ct);
-            }
-
+            await ApplyPageAsync(scope, batch, validator, applier, page.Items, ct);
+            done += page.Items.Count;
+            await context.ReportProgressAsync(done, total, ct);
             cursor = page.NextCursor;
         } while (cursor is not null);
 
@@ -61,32 +57,66 @@ public sealed class ImportCommitHandler(KernelStore store, BoundaryService bound
         return JobOutcome.Success(JobJson.Serialize(new { batch.Created, batch.Updated, batch.Unchanged, batch.Failed }));
     }
 
-    private async Task ApplyRowAsync(TenantScope scope, ImportBatch batch, ImportRowValidator validator, ImportRowApplier applier, ImportRow row, CancellationToken ct)
+    private async Task ApplyPageAsync(
+        TenantScope scope, ImportBatch batch, ImportRowValidator validator, ImportPageApplier applier, IReadOnlyList<ImportRow> rows, CancellationToken ct)
     {
-        var validation = validator.Validate(ImportValidateHandler.ToDictionary(batch.Header, row.Values));   // definitions may have changed since validation
-        if (validation.Row is null)
+        // Definitions may have changed since validation, so every row is checked again before it is applied.
+        var work = new List<(ImportRow Row, ParsedRow Parsed)>();
+        foreach (var row in rows)
         {
-            Fail(row, validation.Errors);
+            var validation = validator.Validate(ImportValidateHandler.ToDictionary(batch.Header, row.Values));
+            if (validation.Row is null) Fail(row, validation.Errors);
+            else work.Add((row, validation.Row));
         }
-        else
+
+        var outcomes = await ApplyWithFallbackAsync(applier, [.. work.Select(w => w.Parsed)], ct);
+        for (var i = 0; i < work.Count; i++)
         {
-            try
+            var (row, outcome) = (work[i].Row, outcomes[i]);
+            if (outcome.Succeeded)
             {
-                row.Action = await applier.ApplyAsync(validation.Row, ct);
+                row.Action = outcome.Action;
                 row.Status = ImportRowStatus.Applied;
                 row.Errors = [];
             }
-            catch (ValidationFailedException e)
+            else
             {
-                Fail(row, [.. e.Codes.Select(c => new ImportRowError { Field = string.Empty, Code = c })]);
-            }
-            catch (DuplicateKeyException)
-            {
-                Fail(row, [new ImportRowError { Field = string.Empty, Code = "concurrent_change" }]);
+                Fail(row, [.. outcome.Errors.Select(c => new ImportRowError { Field = string.Empty, Code = c })]);
             }
         }
 
-        await store.ImportRows.ReplaceAsync(scope, row, ct);
+        await store.ImportRows.ReplaceManyAsync(scope, rows, ct);
+    }
+
+    /// <summary>
+    /// Tries the whole page in bulk. If a unique key is hit (a concurrent import of the same ids), the page is redone one row at a time
+    /// from a fresh read, so each row gets its own verdict and nothing already written is written twice.
+    /// </summary>
+    private static async Task<IReadOnlyList<RowOutcome>> ApplyWithFallbackAsync(ImportPageApplier applier, IReadOnlyList<ParsedRow> parsed, CancellationToken ct)
+    {
+        try
+        {
+            return await applier.ApplyAsync(parsed, ct);
+        }
+        catch (DuplicateKeyException)
+        {
+            applier.Reset();
+            var outcomes = new List<RowOutcome>(parsed.Count);
+            foreach (var row in parsed)
+            {
+                try
+                {
+                    outcomes.Add((await applier.ApplyAsync([row], ct))[0]);
+                }
+                catch (DuplicateKeyException)
+                {
+                    applier.Reset();
+                    outcomes.Add(RowOutcome.Refused("concurrent_change"));
+                }
+            }
+
+            return outcomes;
+        }
     }
 
     private static void Fail(ImportRow row, IReadOnlyList<ImportRowError> errors)

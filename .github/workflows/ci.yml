@@ -27,7 +27,7 @@ jobs:
       - name: Build
         run: dotnet build --no-restore -c Release
       - name: Test
-        run: dotnet test --no-build -c Release --filter "Category!=Scale"
+        run: dotnet test --no-build -c Release
       - name: Secret scan
         run: |
           git diff --no-color -U0 origin/main...HEAD 2>/dev/null | grep -E '^\+[^+]' | grep -Eq 'BEGIN [A-Z ]*PRIVATE KEY|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}' && { echo "secret found"; exit 1; } || true

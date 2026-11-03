@@ -15,6 +15,10 @@ public sealed class AppendOnlyRepository<T>(IMongoCollection<T> collection) wher
     public Task InsertAsync(TenantScope scope, T entity, CancellationToken ct = default) =>
         _rows.InsertAsync(scope, entity, ct);
 
+    /// <summary>Inserts many rows in one round trip. For bulk work that writes a lot of audit or evidence rows.</summary>
+    public Task InsertManyAsync(TenantScope scope, IReadOnlyList<T> entities, CancellationToken ct = default) =>
+        _rows.InsertManyAsync(scope, entities, ct);
+
     public Task<T?> GetAsync(TenantScope scope, string id, CancellationToken ct = default) =>
         _rows.GetAsync(scope, id, ct);
 

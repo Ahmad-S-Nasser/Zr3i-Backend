@@ -44,7 +44,7 @@ public sealed class KernelHarness
         Imports = new ImportService(Store, Data.Jobs, Audit, Clock);
         Runner = new JobRunner(
             Data.CreateJobClaimer(new JobQueueOptions(TimeSpan.FromMinutes(2), 2, TimeSpan.Zero)),
-            [new ImportValidateHandler(Store, Audit, Clock), new ImportCommitHandler(Store, Boundaries, Audit, Clock)],
+            [new ImportValidateHandler(Store, Audit, Clock), new ImportCommitHandler(Store, Audit, Clock)],
             Clock, "test-worker");
     }
 
