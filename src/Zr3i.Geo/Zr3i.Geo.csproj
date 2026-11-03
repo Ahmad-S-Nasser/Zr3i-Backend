@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Zr3i.Kernel\Zr3i.Kernel.csproj" />
+    <PackageReference Include="NetTopologySuite" Version="2.6.0" />
+    <PackageReference Include="ProjNET" Version="2.1.0" />
   </ItemGroup>
 
   <PropertyGroup>

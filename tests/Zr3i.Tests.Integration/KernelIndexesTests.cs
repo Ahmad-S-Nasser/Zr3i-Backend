@@ -19,7 +19,7 @@ public class KernelIndexesTests(MongoFixture mongo)
 
         var users = new KernelStore(new DataStore(db)).Users;
         await users.InsertAsync(PlatformTenant.Scope, new User { Email = "a@example.test" });
-        await Assert.ThrowsAnyAsync<MongoWriteException>(() =>
+        await Assert.ThrowsAsync<DuplicateKeyException>(() =>
             users.InsertAsync(PlatformTenant.Scope, new User { Email = "a@example.test" }));
 
         // The same email in a different tenant is a different row and is allowed.

@@ -11,4 +11,10 @@ public static class Collections
     public const string Sessions = "sessions";
     public const string LoginChallenges = "login_challenges";
     public const string AuditEvents = "audit_events";
+    public const string Portfolios = "portfolios";
+    public const string Farms = "farms";
+    public const string Parcels = "parcels";
+    public const string ParcelSeasons = "parcel_seasons";
+    public const string Boundaries = "boundaries";
+    public const string CustomFieldDefinitions = "custom_field_definitions";
 }

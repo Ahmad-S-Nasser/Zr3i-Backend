@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Identity;
 using Zr3i.Web.Auth;
 using Zr3i.Web.Endpoints;
@@ -34,6 +35,9 @@ public static class WebApp
         builder.Services.AddSingleton<SignInService>();
         builder.Services.AddSingleton<SessionService>();
         builder.Services.AddSingleton<AuthorizationService>();
+        builder.Services.AddSingleton<CustomFieldService>();
+        builder.Services.AddSingleton<FarmService>();
+        builder.Services.AddSingleton<BoundaryService>();
 
         builder.Services.AddAuthentication(SessionAuthenticationHandler.SchemeName)
             .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SessionAuthenticationHandler>(

@@ -30,6 +30,16 @@
           "ZstdSharp.Port": "0.7.3"
         }
       },
+      "NetTopologySuite": {
+        "type": "Transitive",
+        "resolved": "2.6.0",
+        "contentHash": "1B1OTacTd4QtFyBeuIOcThwSSLUdRZU3bSFIwM8vk36XiZlBMi3K36u74e4OqwwHRHUuJC1PhbDx4hyI266X1Q=="
+      },
+      "ProjNET": {
+        "type": "Transitive",
+        "resolved": "2.1.0",
+        "contentHash": "4F0xEYe+cQCgWgnf1UaDlRPFm9RxTaSFt4C/axNnCgSCNWU1AFDNvTyVdN/RwNmTYoGEWxo4sOYMQrW9kQtwpg=="
+      },
       "SharpCompress": {
         "type": "Transitive",
         "resolved": "0.48.1",
@@ -49,6 +59,13 @@
         "type": "Project",
         "dependencies": {
           "MongoDB.Driver": "[3.13.0, )"
+        }
+      },
+      "zr3i.geo": {
+        "type": "Project",
+        "dependencies": {
+          "NetTopologySuite": "[2.6.0, )",
+          "ProjNET": "[2.1.0, )"
         }
       }
     }

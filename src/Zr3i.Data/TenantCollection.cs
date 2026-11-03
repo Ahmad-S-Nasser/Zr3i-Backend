@@ -32,7 +32,14 @@ internal sealed class TenantCollection<T>(IMongoCollection<T> collection) where 
 
         entity.TenantId = scope.TenantId;
         if (string.IsNullOrEmpty(entity.Id)) entity.Id = ObjectId.GenerateNewId().ToString();
-        await Collection.InsertOneAsync(entity, cancellationToken: ct).ConfigureAwait(false);
+        try
+        {
+            await Collection.InsertOneAsync(entity, cancellationToken: ct).ConfigureAwait(false);
+        }
+        catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new DuplicateKeyException(e);
+        }
     }
 
     public async Task<T?> GetAsync(TenantScope scope, string id, CancellationToken ct) =>

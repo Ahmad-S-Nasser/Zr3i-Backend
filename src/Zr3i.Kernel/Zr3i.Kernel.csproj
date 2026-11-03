@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Zr3i.Data\Zr3i.Data.csproj" />
+    <ProjectReference Include="..\Zr3i.Geo\Zr3i.Geo.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

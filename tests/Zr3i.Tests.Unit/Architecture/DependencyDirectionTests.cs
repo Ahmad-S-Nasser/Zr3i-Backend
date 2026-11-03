@@ -13,8 +13,20 @@ public class DependencyDirectionTests
             .Where(n => n.StartsWith("Zr3i.", StringComparison.Ordinal))
             .ToList();
 
-        // The Kernel may use the repository layer and nothing else.
-        Assert.Equal(["Zr3i.Data"], refs.Distinct());
+        // The Kernel may use the repository layer and the geometry library, nothing else.
+        Assert.Empty(refs.Distinct().Except(["Zr3i.Data", "Zr3i.Geo"]));
+        Assert.Contains("Zr3i.Data", refs);
+    }
+
+    [Fact]
+    public void Geo_library_is_pure_and_depends_on_no_other_Zr3i_project()
+    {
+        var refs = typeof(Zr3i.Geo.GeoConstants).Assembly.GetReferencedAssemblies()
+            .Select(a => a.Name!)
+            .Where(n => n.StartsWith("Zr3i.", StringComparison.Ordinal))
+            .ToList();
+
+        Assert.Empty(refs);
     }
 
     [Fact]

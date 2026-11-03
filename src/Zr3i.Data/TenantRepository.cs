@@ -31,8 +31,15 @@ public sealed class TenantRepository<T>(IMongoCollection<T> collection) where T 
     {
         ArgumentNullException.ThrowIfNull(entity);
         entity.TenantId = scope.TenantId;
-        var result = await _rows.Collection.ReplaceOneAsync(_rows.ById(scope, entity.Id), entity, cancellationToken: ct).ConfigureAwait(false);
-        return result.MatchedCount == 1;
+        try
+        {
+            var result = await _rows.Collection.ReplaceOneAsync(_rows.ById(scope, entity.Id), entity, cancellationToken: ct).ConfigureAwait(false);
+            return result.MatchedCount == 1;
+        }
+        catch (MongoWriteException e) when (e.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new DuplicateKeyException(e);
+        }
     }
 
     public async Task<bool> DeleteAsync(TenantScope scope, string id, CancellationToken ct = default)
