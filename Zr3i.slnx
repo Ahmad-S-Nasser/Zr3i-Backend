@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Zr3i.Geo/Zr3i.Geo.csproj" />
+    <Project Path="src/Zr3i.Kernel/Zr3i.Kernel.csproj" />
+    <Project Path="src/Zr3i.Modules.Risk/Zr3i.Modules.Risk.csproj" />
+    <Project Path="src/Zr3i.Modules.Verification/Zr3i.Modules.Verification.csproj" />
+    <Project Path="src/Zr3i.Reports/Zr3i.Reports.csproj" />
+    <Project Path="src/Zr3i.Web/Zr3i.Web.csproj" />
+    <Project Path="src/Zr3i.Worker/Zr3i.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Zr3i.Tests.Unit/Zr3i.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

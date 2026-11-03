@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-commit secret scan (CLAUDE.md rule 8). Enable once per clone:
+#   git config core.hooksPath .githooks
+# Scans only staged additions. Bypass is not supported; remove the secret instead.
+PATTERNS='AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{50,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9]{32,}|mongodb(\+srv)?://[^:/[:space:]]+:[^@[:space:]]+@|(password|passwd|secret|api[_-]?key|token)[[:space:]]*[:=][[:space:]]*["'"'"'][^"'"'"'[:space:]]{8,}["'"'"']'
+
+hits=$(git diff --cached --no-color -U0 --diff-filter=ACM | grep -E '^\+[^+]' | grep -Ei -E "$PATTERNS")
+if [ -n "$hits" ]; then
+  echo "pre-commit: possible secret in staged changes:" >&2
+  echo "$hits" | cut -c1-120 >&2
+  echo "Use dotnet user-secrets or environment variables instead." >&2
+  exit 1
+fi
+exit 0

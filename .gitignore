@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+TestResults/
+coverage/
+appsettings.*.local.json
+.env
+.env.*
+secrets.json
+*.pfx
+*.key

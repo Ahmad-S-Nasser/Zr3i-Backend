@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "zr3i.geo": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      },
+      "zr3i.kernel": {
+        "type": "Project"
+      },
+      "zr3i.modules.risk": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      },
+      "zr3i.modules.verification": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      },
+      "zr3i.reports": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}
