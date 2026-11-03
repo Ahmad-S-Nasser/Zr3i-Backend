@@ -2,7 +2,10 @@ using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Geo;
 using Zr3i.Kernel.Audit;
+using Zr3i.Data.Jobs;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imports;
+using Zr3i.Kernel.Jobs;
 using Zr3i.Kernel.Identity;
 
 namespace Zr3i.Tests.Integration;
@@ -38,6 +41,11 @@ public sealed class KernelHarness
         CustomFields = new CustomFieldService(Store);
         Farms = new FarmService(Store, CustomFields, Audit, Clock);
         Boundaries = new BoundaryService(Store, Audit, Clock);
+        Imports = new ImportService(Store, Data.Jobs, Audit, Clock);
+        Runner = new JobRunner(
+            Data.CreateJobClaimer(new JobQueueOptions(TimeSpan.FromMinutes(2), 2, TimeSpan.Zero)),
+            [new ImportValidateHandler(Store, Audit, Clock), new ImportCommitHandler(Store, Boundaries, Audit, Clock)],
+            Clock, "test-worker");
     }
 
     public MongoDB.Driver.IMongoDatabase Database { get; }
@@ -53,6 +61,11 @@ public sealed class KernelHarness
     public CustomFieldService CustomFields { get; }
     public FarmService Farms { get; }
     public BoundaryService Boundaries { get; }
+    public ImportService Imports { get; }
+    public JobRunner Runner { get; }
+
+    /// <summary>Runs every queued job to completion in this process, as the worker would.</summary>
+    public Task<int> RunJobsAsync() => Runner.RunUntilIdleAsync();
 
     /// <summary>Applies the migrations (indexes), as the API does on start. Tests that rely on unique keys or geo queries call this.</summary>
     public Task MigrateAsync() => Data.MigrateAsync();

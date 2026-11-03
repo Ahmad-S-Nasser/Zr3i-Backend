@@ -1,6 +1,7 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Identity;
 
 namespace Zr3i.Kernel;
@@ -23,6 +24,12 @@ public sealed class KernelStore(DataStore data)
     public TenantRepository<Parcel> Parcels { get; } = data.Tenant<Parcel>(Collections.Parcels);
     public TenantRepository<ParcelSeason> ParcelSeasons { get; } = data.Tenant<ParcelSeason>(Collections.ParcelSeasons);
     public TenantRepository<CustomFieldDefinition> CustomFieldDefinitions { get; } = data.Tenant<CustomFieldDefinition>(Collections.CustomFieldDefinitions);
+
+    public TenantRepository<ImportBatch> ImportBatches { get; } = data.Tenant<ImportBatch>(Collections.ImportBatches);
+    public TenantRepository<ImportRow> ImportRows { get; } = data.Tenant<ImportRow>(Collections.ImportRows);
+
+    /// <summary>The uploaded file exactly as received, in chunks. Append-only: what was uploaded stays provable.</summary>
+    public AppendOnlyRepository<ImportChunk> ImportChunks { get; } = data.AppendOnly<ImportChunk>(Collections.ImportChunks);
 
     /// <summary>Boundaries are append-only: a re-capture is a new row, never an edit.</summary>
     public AppendOnlyRepository<BoundaryVersion> Boundaries { get; } = data.AppendOnly<BoundaryVersion>(Collections.Boundaries);

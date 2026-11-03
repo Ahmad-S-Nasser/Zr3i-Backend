@@ -91,6 +91,9 @@ public sealed class BoundaryVersion : ITenantEntity
     public double MaxLat { get; set; }
     public List<string> Warnings { get; set; } = [];
 
+    /// <summary>Fingerprint of the shape (see BoundaryHash), so a re-import of the same boundary is recognised.</summary>
+    public string GeometrySha256 { get; set; } = string.Empty;
+
     // Provenance
     public string Source { get; set; } = string.Empty;
     public string CapturedBy { get; set; } = string.Empty;

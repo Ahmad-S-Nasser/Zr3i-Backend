@@ -195,6 +195,16 @@
           "Zr3i.Modules.Verification": "[1.0.0, )",
           "Zr3i.Reports": "[1.0.0, )"
         }
+      },
+      "zr3i.worker": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )",
+          "Zr3i.Modules.Risk": "[1.0.0, )",
+          "Zr3i.Modules.Verification": "[1.0.0, )",
+          "Zr3i.Reports": "[1.0.0, )"
+        }
       }
     }
   }

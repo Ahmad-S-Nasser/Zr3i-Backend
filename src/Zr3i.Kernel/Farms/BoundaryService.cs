@@ -20,8 +20,13 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
 
     /// <exception cref="NotFoundException">The parcel is not in this tenant.</exception>
     /// <exception cref="ValidationFailedException">Codes from the provenance checks or <see cref="BoundaryValidator"/>, or "capture_older_than_current".</exception>
+    public Task<BoundaryVersion> AddAsync(
+        TenantScope scope, string actorUserId, string parcelId, PolygonInput polygon, BoundaryProvenance provenance, CancellationToken ct = default) =>
+        AddAsync(scope, actorUserId, parcelId, BoundaryValidator.Check(polygon), provenance, ct);
+
+    /// <summary>As above, for a polygon that has already been checked (the bulk import checks each row once).</summary>
     public async Task<BoundaryVersion> AddAsync(
-        TenantScope scope, string actorUserId, string parcelId, PolygonInput polygon, BoundaryProvenance provenance, CancellationToken ct = default)
+        TenantScope scope, string actorUserId, string parcelId, BoundaryCheck check, BoundaryProvenance provenance, CancellationToken ct = default)
     {
         var parcel = await store.Parcels.GetAsync(scope, parcelId ?? string.Empty, ct) ?? throw new NotFoundException("parcel", parcelId ?? string.Empty);
 
@@ -34,7 +39,6 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
         if (capturedAt > now + ClockSkew) errors.Add("capture_in_future");
         if (errors.Count > 0) throw new ValidationFailedException(errors);
 
-        var check = BoundaryValidator.Check(polygon);
         if (!check.IsValid) throw new ValidationFailedException(check.Errors);
 
         var current = Tip(await HistoryAsync(scope, parcel.Id, ct));
@@ -55,6 +59,7 @@ public sealed class BoundaryService(KernelStore store, AuditService audit, TimeP
             MaxLon = check.Bounds.MaxLon,
             MaxLat = check.Bounds.MaxLat,
             Warnings = [.. check.Warnings],
+            GeometrySha256 = BoundaryHash.Of(check.Rings),
             Source = provenance.Source,
             CapturedBy = provenance.CapturedBy.Trim(),
             CapturedAt = capturedAt,

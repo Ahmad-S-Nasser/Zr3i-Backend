@@ -3,6 +3,7 @@ using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Identity;
 using Zr3i.Web.Auth;
 using Zr3i.Web.Endpoints;
@@ -35,9 +36,11 @@ public static class WebApp
         builder.Services.AddSingleton<SignInService>();
         builder.Services.AddSingleton<SessionService>();
         builder.Services.AddSingleton<AuthorizationService>();
+        builder.Services.AddSingleton<Guard>();
         builder.Services.AddSingleton<CustomFieldService>();
         builder.Services.AddSingleton<FarmService>();
         builder.Services.AddSingleton<BoundaryService>();
+        builder.Services.AddSingleton(sp => new ImportService(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
 
         builder.Services.AddAuthentication(SessionAuthenticationHandler.SchemeName)
             .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, SessionAuthenticationHandler>(
@@ -75,6 +78,7 @@ public static class WebApp
             await data.PingAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(StatusCodes.Status503ServiceUnavailable));
         app.MapAuthEndpoints();
         app.MapInvitationEndpoints();
+        app.MapImportEndpoints();
         app.MapMeEndpoints();
 
         return app;

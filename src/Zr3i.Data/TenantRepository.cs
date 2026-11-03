@@ -14,6 +14,10 @@ public sealed class TenantRepository<T>(IMongoCollection<T> collection) where T 
     public Task InsertAsync(TenantScope scope, T entity, CancellationToken ct = default) =>
         _rows.InsertAsync(scope, entity, ct);
 
+    /// <summary>Inserts many rows in one round trip, all stamped with the scope's tenant. For bulk staging.</summary>
+    public Task InsertManyAsync(TenantScope scope, IReadOnlyList<T> entities, CancellationToken ct = default) =>
+        _rows.InsertManyAsync(scope, entities, ct);
+
     public Task<T?> GetAsync(TenantScope scope, string id, CancellationToken ct = default) =>
         _rows.GetAsync(scope, id, ct);
 
@@ -41,6 +45,10 @@ public sealed class TenantRepository<T>(IMongoCollection<T> collection) where T 
             throw new DuplicateKeyException(e);
         }
     }
+
+    /// <summary>Deletes every row of the tenant that matches. Returns how many were removed.</summary>
+    public async Task<long> DeleteWhereAsync(TenantScope scope, Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
+        (await _rows.Collection.DeleteManyAsync(_rows.ForTenant(scope, predicate), ct).ConfigureAwait(false)).DeletedCount;
 
     public async Task<bool> DeleteAsync(TenantScope scope, string id, CancellationToken ct = default)
     {

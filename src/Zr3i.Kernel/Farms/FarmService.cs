@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using Zr3i.Data;
 using Zr3i.Geo;
 using Zr3i.Kernel.Audit;
@@ -37,18 +35,10 @@ public sealed record NewParcelSeason(
 /// Creates portfolios, farms, parcels and parcel-seasons inside one tenant. Parents must exist in the same tenant,
 /// external ids are unique per tenant, and custom fields are checked against the tenant's own definitions.
 /// </summary>
-public sealed partial class FarmService(KernelStore store, CustomFieldService customFields, AuditService audit, TimeProvider clock)
+public sealed class FarmService(KernelStore store, CustomFieldService customFields, AuditService audit, TimeProvider clock)
 {
     private const int MaxName = 200;
     private const int MaxExternalId = 100;
-    private const double MaxDeclaredFeddan = BoundaryRules.MaxAreaM2 / GeoConstants.SquareMetresPerFeddan;
-
-    [GeneratedRegex("^[a-z0-9][a-z0-9-]{2,39}$")]
-    private static partial Regex SeasonShape();
-
-    [GeneratedRegex("^[a-z][a-z0-9_-]{0,39}$")]
-    private static partial Regex CropShape();
-
     public async Task<Portfolio> CreatePortfolioAsync(TenantScope scope, string actorUserId, NewPortfolio request, CancellationToken ct = default)
     {
         var errors = new List<string>();
@@ -120,14 +110,10 @@ public sealed partial class FarmService(KernelStore store, CustomFieldService cu
     /// </summary>
     public async Task<ParcelSeason> DeclareSeasonAsync(TenantScope scope, string actorUserId, NewParcelSeason request, CancellationToken ct = default)
     {
-        var errors = new List<string>();
+        var errors = new List<string>(FarmRules.SeasonErrors(request.Season, request.DeclaredCrop, request.DeclaredAreaFeddan, request.DeclaredSowingDate));
         var season = request.Season?.Trim() ?? string.Empty;
-        if (!SeasonShape().IsMatch(season)) errors.Add("invalid_season");
         var crop = Blank(request.DeclaredCrop);
-        if (crop is not null && !CropShape().IsMatch(crop)) errors.Add("invalid_crop");
-        if (request.DeclaredAreaFeddan is { } area && !(area > 0 && area <= MaxDeclaredFeddan)) errors.Add("invalid_declared_area");
         var sowing = Blank(request.DeclaredSowingDate);
-        if (sowing is not null && !DateOnly.TryParseExact(sowing, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)) errors.Add("invalid_sowing_date");
         var externalId = ExternalId(request.ExternalId, errors);
         Throw(errors);
 

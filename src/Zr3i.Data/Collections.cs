@@ -18,4 +18,7 @@ public static class Collections
     public const string Boundaries = "boundaries";
     public const string CustomFieldDefinitions = "custom_field_definitions";
     public const string Jobs = "jobs";
+    public const string ImportBatches = "import_batches";
+    public const string ImportChunks = "import_chunks";
+    public const string ImportRows = "import_rows";
 }

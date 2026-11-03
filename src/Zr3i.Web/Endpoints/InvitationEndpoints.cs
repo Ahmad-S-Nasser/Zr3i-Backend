@@ -51,15 +51,8 @@ public static class InvitationEndpoints
             string tenantId, InviteRequest b, HttpContext http,
             AuthorizationService authorization, InvitationService invitations, AuditService audit, CancellationToken ct) =>
         {
+            if (await TenantAccess.DenyUnlessAsync(http, tenantId, ManageUsers, authorization, audit, ct) is { } denied) return denied;
             var userId = http.User.UserId();
-            if (!await authorization.IsAllowedAsync(userId, tenantId, ManageUsers, ct))
-            {
-                // A refused cross-tenant or under-privileged attempt is recorded in the tenant it was aimed at.
-                if (!string.IsNullOrWhiteSpace(tenantId))
-                    await audit.RecordAsync(TenantScope.ForTenant(tenantId), userId, "access.denied", "organisation", tenantId,
-                        AuditService.Denied, purpose: ManageUsers, ct: ct);
-                return Results.Json(new { error = "forbidden" }, statusCode: StatusCodes.Status403Forbidden);
-            }
 
             if (string.IsNullOrWhiteSpace(b.Email) || b.RoleKeys is null) return Results.BadRequest(new { error = "invalid_request" });
             try

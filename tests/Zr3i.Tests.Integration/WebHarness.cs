@@ -27,6 +27,8 @@ public sealed class WebHarness : IAsyncDisposable
     }
 
     public HttpClient Http { get; }
+    public string DatabaseName => _database;
+    public static string MongoConnection => Environment.GetEnvironmentVariable("ZR3I_TEST_MONGO") ?? "mongodb://localhost:27017";
     public T Service<T>() where T : notnull => _app.Services.GetRequiredService<T>();
 
     public static async Task<WebHarness> StartAsync(int authPerMinute = 1000)
@@ -34,7 +36,7 @@ public sealed class WebHarness : IAsyncDisposable
         var database = "zr3i_test_web_" + Guid.NewGuid().ToString("N");
         var app = WebApp.Build([], new Dictionary<string, string?>
         {
-            ["Mongo:ConnectionString"] = Environment.GetEnvironmentVariable("ZR3I_TEST_MONGO") ?? "mongodb://localhost:27017",
+            ["Mongo:ConnectionString"] = MongoConnection,
             ["Mongo:Database"] = database,
             ["Mongo:MigrateOnStartup"] = "true",
             ["Auth:PasswordIterations"] = "1000",

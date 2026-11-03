@@ -42,6 +42,29 @@ internal sealed class TenantCollection<T>(IMongoCollection<T> collection) where 
         }
     }
 
+    public async Task InsertManyAsync(TenantScope scope, IReadOnlyList<T> entities, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        if (entities.Count == 0) return;
+
+        foreach (var entity in entities)
+        {
+            if (!string.IsNullOrEmpty(entity.TenantId) && entity.TenantId != scope.TenantId)
+                throw new TenantMismatchException(entity.TenantId, scope.TenantId);
+            entity.TenantId = scope.TenantId;
+            if (string.IsNullOrEmpty(entity.Id)) entity.Id = ObjectId.GenerateNewId().ToString();
+        }
+
+        try
+        {
+            await Collection.InsertManyAsync(entities, cancellationToken: ct).ConfigureAwait(false);
+        }
+        catch (MongoBulkWriteException e) when (e.WriteErrors.Count > 0 && e.WriteErrors.All(w => w.Category == ServerErrorCategory.DuplicateKey))
+        {
+            throw new DuplicateKeyException(e);
+        }
+    }
+
     public async Task<T?> GetAsync(TenantScope scope, string id, CancellationToken ct) =>
         await Collection.Find(ById(scope, id)).FirstOrDefaultAsync(ct).ConfigureAwait(false);
 

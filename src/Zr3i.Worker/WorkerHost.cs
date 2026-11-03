@@ -3,6 +3,7 @@ using Zr3i.Data.Jobs;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Jobs;
 
 namespace Zr3i.Worker;
@@ -46,7 +47,8 @@ internal static class JobHandlers
 {
     public static void Register(IServiceCollection services)
     {
-        // Import handlers are added with the bulk import (W2-3).
+        services.AddSingleton<IJobHandler, ImportValidateHandler>();
+        services.AddSingleton<IJobHandler, ImportCommitHandler>();
     }
 }
 
