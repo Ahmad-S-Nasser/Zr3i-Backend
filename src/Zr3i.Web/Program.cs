@@ -1,9 +1,3 @@
-var builder = WebApplication.CreateBuilder(args);
+using Zr3i.Web;
 
-var app = builder.Build();
-
-app.UseHttpsRedirection();
-
-app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
-
-app.Run();
+await WebApp.Build(args).RunAsync();

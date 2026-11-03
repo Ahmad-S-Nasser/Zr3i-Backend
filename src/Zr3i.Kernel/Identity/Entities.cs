@@ -26,6 +26,7 @@ public sealed class User : ITenantEntity
     public string PasswordHash { get; set; } = string.Empty;
     public string TotpSecret { get; set; } = string.Empty;
     public string Language { get; set; } = "en";
+    public List<string> OrganisationIds { get; set; } = [];
     public bool IsActive { get; set; } = true;
     public int FailedAttempts { get; set; }
     public DateTime? LockedUntil { get; set; }

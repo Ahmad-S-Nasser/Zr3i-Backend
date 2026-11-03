@@ -3,6 +3,23 @@ using Zr3i.Kernel.Audit;
 
 namespace Zr3i.Kernel.Identity;
 
+/// <summary>Why an invitation call failed. For logs, tests and the few reasons the API may show to the token holder.</summary>
+public static class InvitationReason
+{
+    public const string Malformed = "malformed";
+    public const string NotFound = "not_found";
+    public const string AlreadyUsed = "already_used";
+    public const string Expired = "expired";
+    public const string WeakPassword = "weak_password";
+    public const string Language = "language";
+    public const string BadCode = "bad_code";
+    public const string ExistingUser = "existing_user";
+    public const string WrongUser = "wrong_user";
+    public const string UnknownRole = "unknown_role";
+    public const string NoRoles = "no_roles";
+    public const string Email = "invalid_email";
+}
+
 /// <summary>Raised for every way an invitation can be unusable. The message is deliberately the same for all of them.</summary>
 public sealed class InvitationException(string reason) : Exception("The invitation cannot be used.")
 {
@@ -23,13 +40,13 @@ public sealed class InvitationService(KernelStore store, PasswordHasher hasher, 
         TenantScope scope, string invitedByUserId, string email, IReadOnlyList<string> roleKeys, CancellationToken ct = default)
     {
         var normalised = NormaliseEmail(email);
-        if (roleKeys.Count == 0) throw new InvitationException("no roles");
+        if (roleKeys.Count == 0) throw new InvitationException(InvitationReason.NoRoles);
 
         var roles = await store.Roles.FindAsync(scope, _ => true, ct: ct);
         var roleIds = new List<string>();
         foreach (var key in roleKeys)
         {
-            var role = roles.FirstOrDefault(r => r.Key == key) ?? throw new InvitationException("unknown role");
+            var role = roles.FirstOrDefault(r => r.Key == key) ?? throw new InvitationException(InvitationReason.UnknownRole);
             roleIds.Add(role.Id);
         }
 
@@ -53,12 +70,12 @@ public sealed class InvitationService(KernelStore store, PasswordHasher hasher, 
     {
         var (scope, invitation) = await FindUsableAsync(token, ct);
 
-        if (!PasswordHasher.MeetsPolicy(password)) throw new InvitationException("weak password");
-        if (!Languages.Contains(language)) throw new InvitationException("language");
-        if (!Totp.Verify(totpSecret, totpCode, clock.GetUtcNow())) throw new InvitationException("bad code");
+        if (!PasswordHasher.MeetsPolicy(password)) throw new InvitationException(InvitationReason.WeakPassword);
+        if (!Languages.Contains(language)) throw new InvitationException(InvitationReason.Language);
+        if (!Totp.Verify(totpSecret, totpCode, clock.GetUtcNow())) throw new InvitationException(InvitationReason.BadCode);
 
         var existing = await store.Users.FindAsync(PlatformTenant.Scope, u => u.Email == invitation.Email, 1, ct);
-        if (existing.Count > 0) throw new InvitationException("existing user");
+        if (existing.Count > 0) throw new InvitationException(InvitationReason.ExistingUser);
 
         var user = new User
         {
@@ -80,7 +97,7 @@ public sealed class InvitationService(KernelStore store, PasswordHasher hasher, 
         var (scope, invitation) = await FindUsableAsync(token, ct);
 
         var user = await store.Users.GetAsync(PlatformTenant.Scope, userId, ct);
-        if (user is null || !user.IsActive || user.Email != invitation.Email) throw new InvitationException("wrong user");
+        if (user is null || !user.IsActive || user.Email != invitation.Email) throw new InvitationException(InvitationReason.WrongUser);
 
         await JoinAsync(scope, invitation, user, ct);
     }
@@ -91,6 +108,13 @@ public sealed class InvitationService(KernelStore store, PasswordHasher hasher, 
         if (already.Count == 0)
             await store.Memberships.InsertAsync(scope, new Membership { UserId = user.Id, RoleIds = [.. invitation.RoleIds] }, ct);
 
+        // Memberships are tenant-scoped, so the user keeps the list of organisations they belong to ("my organisations").
+        if (!user.OrganisationIds.Contains(scope.TenantId))
+        {
+            user.OrganisationIds.Add(scope.TenantId);
+            await store.Users.ReplaceAsync(PlatformTenant.Scope, user, ct);
+        }
+
         invitation.AcceptedAt = clock.GetUtcNow().UtcDateTime;
         await store.Invitations.ReplaceAsync(scope, invitation, ct);
         await audit.RecordAsync(scope, user.Id, "invitation.accepted", "invitation", invitation.Id, ct: ct);
@@ -99,22 +123,22 @@ public sealed class InvitationService(KernelStore store, PasswordHasher hasher, 
     private async Task<(TenantScope Scope, Invitation Invitation)> FindUsableAsync(string token, CancellationToken ct)
     {
         if (!Tokens.TrySplit(token, out var tenantId, out var secret) || string.IsNullOrWhiteSpace(tenantId))
-            throw new InvitationException("malformed");
+            throw new InvitationException(InvitationReason.Malformed);
 
         var scope = TenantScope.ForTenant(tenantId);
         var hash = Tokens.Hash(secret);
         var found = await store.Invitations.FindAsync(scope, i => i.TokenHash == hash, 1, ct);
-        var invitation = found.Count == 1 ? found[0] : throw new InvitationException("not found");
+        var invitation = found.Count == 1 ? found[0] : throw new InvitationException(InvitationReason.NotFound);
 
-        if (invitation.AcceptedAt is not null) throw new InvitationException("already used");
-        if (invitation.ExpiresAt <= clock.GetUtcNow().UtcDateTime) throw new InvitationException("expired");
+        if (invitation.AcceptedAt is not null) throw new InvitationException(InvitationReason.AlreadyUsed);
+        if (invitation.ExpiresAt <= clock.GetUtcNow().UtcDateTime) throw new InvitationException(InvitationReason.Expired);
         return (scope, invitation);
     }
 
     internal static string NormaliseEmail(string email)
     {
         var e = (email ?? string.Empty).Trim().ToLowerInvariant();
-        if (e.Length < 3 || !e.Contains('@', StringComparison.Ordinal)) throw new InvitationException("email");
+        if (e.Length < 3 || !e.Contains('@', StringComparison.Ordinal)) throw new InvitationException(InvitationReason.Email);
         return e;
     }
 }
