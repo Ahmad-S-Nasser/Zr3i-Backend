@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/Zr3i.Data/Zr3i.Data.csproj" />
     <Project Path="src/Zr3i.Geo/Zr3i.Geo.csproj" />
     <Project Path="src/Zr3i.Kernel/Zr3i.Kernel.csproj" />
     <Project Path="src/Zr3i.Modules.Risk/Zr3i.Modules.Risk.csproj" />
@@ -9,6 +10,7 @@
     <Project Path="src/Zr3i.Worker/Zr3i.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Zr3i.Tests.Integration/Zr3i.Tests.Integration.csproj" />
     <Project Path="tests/Zr3i.Tests.Unit/Zr3i.Tests.Unit.csproj" />
   </Folder>
 </Solution>

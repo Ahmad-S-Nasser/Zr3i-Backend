@@ -7,10 +7,16 @@ on:
 
 env:
   CI: "true"
+  ZR3I_TEST_MONGO: mongodb://localhost:27017
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:8
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4

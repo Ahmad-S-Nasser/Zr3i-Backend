@@ -24,6 +24,9 @@
     <ProjectReference Include="..\..\src\Zr3i.Modules.Verification\Zr3i.Modules.Verification.csproj" />
     <ProjectReference Include="..\..\src\Zr3i.Modules.Risk\Zr3i.Modules.Risk.csproj" />
     <ProjectReference Include="..\..\src\Zr3i.Reports\Zr3i.Reports.csproj" />
+    <ProjectReference Include="..\..\src\Zr3i.Data\Zr3i.Data.csproj" />
+    <ProjectReference Include="..\..\src\Zr3i.Web\Zr3i.Web.csproj" />
+    <ProjectReference Include="..\..\src\Zr3i.Worker\Zr3i.Worker.csproj" />
   </ItemGroup>
 
 </Project>
