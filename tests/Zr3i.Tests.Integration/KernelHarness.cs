@@ -4,6 +4,7 @@ using Zr3i.Geo;
 using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
 using Zr3i.Data.Jobs;
+using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Jobs;
@@ -38,6 +39,9 @@ public sealed class KernelHarness
         Organisations = new OrganisationService(Store, AccountTypes, Audit, Clock);
         Invitations = new InvitationService(Store, hasher, Audit, Clock);
         Platform = new PlatformService(Store, Organisations, Invitations, Clock);
+        FarmerService = new FarmerService(Store, Audit, Clock);
+        Consent = new ConsentService(Store, Audit, Clock);
+        Gate = new ConsentGate(Store, Audit, Clock);
         AccessRequests = new AccessRequestService(Store, AccountTypes, Organisations, Invitations, Audit, Clock);
         SignIn = new SignInService(Store, hasher, Audit, Clock);
         Sessions = new SessionService(Store, Clock);
@@ -65,6 +69,9 @@ public sealed class KernelHarness
     public AccountTypeService AccountTypes { get; }
     public PlatformService Platform { get; }
     public AccessRequestService AccessRequests { get; }
+    public FarmerService FarmerService { get; }
+    public ConsentService Consent { get; }
+    public ConsentGate Gate { get; }
     public CustomFieldService CustomFields { get; }
     public FarmService Farms { get; }
     public BoundaryService Boundaries { get; }

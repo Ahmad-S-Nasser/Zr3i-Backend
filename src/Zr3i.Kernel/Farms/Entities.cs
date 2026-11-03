@@ -26,6 +26,9 @@ public sealed class Farm : ITenantEntity
     public string? Markaz { get; set; }
     public string? Village { get; set; }
 
+    /// <summary>The farmer who owns the consent for this farm's data. Null when no farmer is recorded.</summary>
+    public string? FarmerId { get; set; }
+
     /// <summary>Nullable on purpose: Egypt has no public parcel layer, so a cadastral reference is never a precondition.</summary>
     public string? CadastralRef { get; set; }
     public string? ExternalId { get; set; }

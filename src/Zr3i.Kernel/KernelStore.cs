@@ -1,6 +1,7 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Identity;
@@ -25,6 +26,12 @@ public sealed class KernelStore(DataStore data)
     public TenantRepository<Parcel> Parcels { get; } = data.Tenant<Parcel>(Collections.Parcels);
     public TenantRepository<ParcelSeason> ParcelSeasons { get; } = data.Tenant<ParcelSeason>(Collections.ParcelSeasons);
     public TenantRepository<CustomFieldDefinition> CustomFieldDefinitions { get; } = data.Tenant<CustomFieldDefinition>(Collections.CustomFieldDefinitions);
+
+    public TenantRepository<Farmer> Farmers { get; } = data.Tenant<Farmer>(Collections.Farmers);
+    public TenantRepository<ConsentRequest> ConsentRequests { get; } = data.Tenant<ConsentRequest>(Collections.ConsentRequests);
+
+    /// <summary>The consent ledger (hard rule 5): grants and withdrawals are only ever added, never changed.</summary>
+    public AppendOnlyRepository<ConsentEvent> ConsentEvents { get; } = data.AppendOnly<ConsentEvent>(Collections.ConsentEvents);
 
     public TenantRepository<AccessRequest> AccessRequests { get; } = data.Tenant<AccessRequest>(Collections.AccessRequests);
     public TenantRepository<AccountType> AccountTypes { get; } = data.Tenant<AccountType>(Collections.AccountTypes);

@@ -28,6 +28,9 @@ public sealed class AccountType : ITenantEntity
 
     /// <summary>False for Zr3i staff: those accounts are invitation only.</summary>
     public bool SelfSignup { get; set; } = true;
+
+    /// <summary>True when an organisation of this type is one farmer's own account: it gets a farmer profile, so it can own consent.</summary>
+    public bool CreatesFarmerProfile { get; set; }
     public List<string> RoleKeys { get; set; } = [];
     public List<string> Modules { get; set; } = [];
     public string HomeView { get; set; } = string.Empty;
@@ -74,7 +77,7 @@ public static class BuiltInAccountTypes
         },
         new()
         {
-            Key = "farmer", LabelEn = "Farmer", LabelAr = "مزارع", Model = "b2b_b2b2c",
+            Key = "farmer", LabelEn = "Farmer", LabelAr = "مزارع", Model = "b2b_b2b2c", CreatesFarmerProfile = true,
             RoleKeys = ["org-admin", "viewer"], Modules = ["verification"],
             HomeView = "my-farms", Navigation = ["my-farms", "consent", "reports"],
             SignupFields = [new SignupField { Key = "mobile_number", LabelEn = "Mobile number", LabelAr = "رقم الهاتف المحمول", Required = true }],

@@ -14,7 +14,8 @@ public sealed record NewFarm(
     string? Village = null,
     string? CadastralRef = null,
     string? ExternalId = null,
-    IReadOnlyDictionary<string, string?>? CustomFields = null);
+    IReadOnlyDictionary<string, string?>? CustomFields = null,
+    string? FarmerId = null);
 
 public sealed record NewParcel(string FarmId, string Label, string? ExternalId = null, IReadOnlyDictionary<string, string?>? CustomFields = null);
 
@@ -67,9 +68,13 @@ public sealed class FarmService(KernelStore store, CustomFieldService customFiel
         if (!string.IsNullOrWhiteSpace(request.PortfolioId) && await store.Portfolios.GetAsync(scope, request.PortfolioId, ct) is null)
             throw new NotFoundException("portfolio", request.PortfolioId);
 
+        var farmerId = Blank(request.FarmerId);
+        if (farmerId is not null && await store.Farmers.GetAsync(scope, farmerId, ct) is null) throw new NotFoundException("farmer", farmerId);
+
         var farm = new Farm
         {
             Name = name,
+            FarmerId = farmerId,
             PortfolioId = Blank(request.PortfolioId),
             Governorate = Blank(request.Governorate),
             Markaz = Blank(request.Markaz),

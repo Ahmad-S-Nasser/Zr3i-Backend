@@ -50,9 +50,9 @@ public sealed class WebHarness : IAsyncDisposable
     }
 
     /// <summary>Creates an organisation and an invitation for the email, as an admin would. Returns the org id and token.</summary>
-    public async Task<(string OrgId, string Token)> OrgWithInvitationAsync(string email, string roleKey = "org-admin", string orgName = "Delta Agro")
+    public async Task<(string OrgId, string Token)> OrgWithInvitationAsync(string email, string roleKey = "org-admin", string orgName = "Delta Agro", string accountType = "company")
     {
-        var org = await Service<OrganisationService>().CreateAsync(orgName, "company");
+        var org = await Service<OrganisationService>().CreateAsync(orgName, accountType);
         var token = await Service<InvitationService>().InviteAsync(TenantScope.ForTenant(org.Id), "system", email, [roleKey]);
         return (org.Id, token);
     }

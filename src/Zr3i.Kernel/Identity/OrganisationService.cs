@@ -1,6 +1,7 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Consent;
 
 namespace Zr3i.Kernel.Identity;
 
@@ -48,6 +49,9 @@ public sealed class OrganisationService(KernelStore store, AccountTypeService ac
         await store.Organisations.InsertAsync(scope, org, ct);
         foreach (var t in RoleTemplates.All.Where(t => preset.RoleKeys.Contains(t.Key)))
             await store.Roles.InsertAsync(scope, new Role { Key = t.Key, Name = t.Name, Permissions = [.. t.Permissions] }, ct);
+
+        if (preset.CreatesFarmerProfile)
+            await store.Farmers.InsertAsync(scope, new Farmer { Name = org.Name, AccountOrganisationId = org.Id, CreatedAt = org.CreatedAt }, ct);
 
         await audit.RecordAsync(scope, "system", "organisation.created", "organisation", org.Id, ct: ct);
         return org;

@@ -42,7 +42,7 @@ public sealed class AccountTypeService(KernelStore store)
 
     private static AccountType Copy(AccountType t) => new()
     {
-        Key = t.Key, LabelEn = t.LabelEn, LabelAr = t.LabelAr, Model = t.Model, SelfSignup = t.SelfSignup, HomeView = t.HomeView,
+        Key = t.Key, LabelEn = t.LabelEn, LabelAr = t.LabelAr, Model = t.Model, SelfSignup = t.SelfSignup, CreatesFarmerProfile = t.CreatesFarmerProfile, HomeView = t.HomeView,
         RoleKeys = [.. t.RoleKeys], Modules = [.. t.Modules], Navigation = [.. t.Navigation],
         SignupFields = [.. t.SignupFields.Select(f => new SignupField { Key = f.Key, LabelEn = f.LabelEn, LabelAr = f.LabelAr, Required = f.Required })],
     };

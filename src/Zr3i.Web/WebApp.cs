@@ -3,6 +3,7 @@ using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Imports;
 using Zr3i.Kernel.Identity;
@@ -36,6 +37,10 @@ public static class WebApp
         builder.Services.AddSingleton<OrganisationService>();
         builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<AccessRequestService>();
+        builder.Services.AddSingleton<FarmerService>();
+        builder.Services.AddSingleton<ConsentService>();
+        builder.Services.AddSingleton<ConsentGate>();
+        builder.Services.AddSingleton<SharedDataService>();
         builder.Services.AddSingleton<InvitationService>();
         builder.Services.AddSingleton<SignInService>();
         builder.Services.AddSingleton<SessionService>();
@@ -92,6 +97,7 @@ public static class WebApp
         app.MapInvitationEndpoints();
         app.MapImportEndpoints();
         app.MapAccessRequestEndpoints();
+        app.MapConsentEndpoints();
         app.MapMeEndpoints();
 
         return app;

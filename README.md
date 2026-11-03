@@ -51,3 +51,19 @@ CSV: UTF-8, comma, semicolon or tab. One row per parcel and season. Required col
 
 Importing the same file again changes nothing. A blank cell never erases a value already stored. Errors are stable codes (for example `invalid_number`, `self_intersection`, `parcel_belongs_to_other_farm`); the wording lives in the frontend.
 
+## Account types, sign-up and consent
+
+First start of a new installation: set `Platform:BootstrapAdminEmail`; the API logs a one-time invitation for the first Zr3i administrator.
+
+| Route | Access | Purpose |
+| --- | --- | --- |
+| `GET /api/account-types`, `POST /api/access-requests` | open | the request-access form (fields come from the account type) and its submission |
+| `GET /api/platform/access-requests`, `POST .../{id}/approve`, `POST .../{id}/reject` | `platform:access-requests:manage` | the Zr3i administrators' queue; approving creates the organisation and returns the first admin's invitation |
+| `POST/GET /api/organisations/{id}/farmers` | `kernel:farmers:write` / `read` | the farmers whose consent governs a set of farms |
+| `POST /api/organisations/{id}/consent-requests` | `kernel:consents:write` | ask a farmer to share data; returns the link for the farmer |
+| `GET /api/consent/{token}`, `POST /api/consent/{token}`, `POST /api/consent/withdraw/{token}` | the link | the farmer's one-page consent and withdrawal, no account needed |
+| `GET/POST /api/organisations/{id}/consents`, `POST .../consents/{grant}/withdraw` | `kernel:consents:read` / `manage` | a farmer with their own account grants and withdraws |
+| `GET /api/organisations/{id}/shared`, `GET .../shared/{grant}/parcels?ids=` | `kernel:shared:read` | what has been shared with this organisation, and reading it through the consent gate |
+
+Consent belongs to the farmer: a company can only ask, withdrawal takes effect on the next read, and every read or refusal is audited in both organisations. Parcels outside a grant are returned only as a `withheld` count.
+

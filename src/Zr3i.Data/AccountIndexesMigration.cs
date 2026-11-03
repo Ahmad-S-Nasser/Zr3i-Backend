@@ -13,6 +13,7 @@ public sealed class AccountIndexesMigration : IMigration
         await IndexBuilder.Ascending(database, Collections.AccessRequests, false, ct, "TenantId", "Status", "CreatedAt");
         await IndexBuilder.Ascending(database, Collections.Farmers, false, ct, "TenantId", "Name");
         await IndexBuilder.UniqueExternalId(database, Collections.Farmers, ct);
+        await IndexBuilder.Ascending(database, Collections.Farms, false, ct, "TenantId", "FarmerId");
         await IndexBuilder.Ascending(database, Collections.ConsentRequests, false, ct, "TenantId", "FarmerId");
         await IndexBuilder.Ascending(database, Collections.ConsentEvents, false, ct, "TenantId", "GrantId", "At");
         await IndexBuilder.Ascending(database, Collections.ConsentEvents, false, ct, "TenantId", "FarmerId");
