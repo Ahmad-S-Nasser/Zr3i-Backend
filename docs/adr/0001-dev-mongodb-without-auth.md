@@ -1,6 +1,6 @@
-﻿# 0001 Development MongoDB runs without auth
+# 0001 Development MongoDB runs without auth
 
-Date: 2026-11-03 Â· Status: accepted for development only
+Date: 2026-11-03 · Status: accepted for development only
 
 ## Context
 The plan (W1-2) and CLAUDE.md rule 5 call for a single-node replica set with auth, so the application role can be limited to find and insert on append-only collections. The developer's local MongoDB is already installed without auth and without a replica set.
