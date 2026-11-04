@@ -43,6 +43,7 @@ public static class WebApp
         builder.Services.AddSingleton<MethodRegistry>();
         builder.Services.AddSingleton<Zr3i.Kernel.Crops.CropConfigs>();
         builder.Services.AddSingleton<SceneCatalog>();
+        builder.Services.AddSingleton(sp => new Zr3i.Kernel.Findings.AssessmentPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new IngestPlanner(sp.GetRequiredService<SceneCatalog>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new DiscoveryPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<FarmerService>();
@@ -115,6 +116,7 @@ public static class WebApp
         app.MapReadabilityEndpoints();
         app.MapMethodEndpoints();
         app.MapCropEndpoints();
+        app.MapFindingEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();
 

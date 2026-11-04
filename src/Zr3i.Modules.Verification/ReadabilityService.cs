@@ -34,7 +34,7 @@ public sealed class ReadabilityService(KernelStore store)
     }
 
     /// <summary>The stored count, or one worked out from the shape for a boundary saved before the count was kept.</summary>
-    private static int FullPixelsOf(Zr3i.Kernel.Farms.BoundaryVersion b) =>
+    internal static int FullPixelsOf(Zr3i.Kernel.Farms.BoundaryVersion b) =>
         b.PixelMethodId == PixelTestRules.MethodId
             ? b.FullPixels
             : PixelTest.Evaluate([.. b.Geometry.Coordinates.Select(r => (IReadOnlyList<LonLat>)[.. r.Select(p => new LonLat(p[0], p[1]))])]).FullPixels;

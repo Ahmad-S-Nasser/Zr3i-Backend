@@ -63,6 +63,16 @@ internal static class JobHandlers
         services.AddSingleton<IBandReader>(_ => new GdalBandReader());
         services.AddSingleton<Zr3i.Kernel.Methods.MethodRegistry>();
         services.AddSingleton<IJobHandler, IngestHandler>();
+
+        // Assessing a season: the per-crop settings and the findings handler. Size classes come from the same configuration as the web app.
+        services.AddSingleton<Zr3i.Kernel.Crops.CropConfigs>();
+        services.AddSingleton<IJobHandler>(sp =>
+        {
+            var edges = sp.GetRequiredService<IConfiguration>().GetSection("Verification:SizeClassEdgesFeddan").Get<double[]>() ?? [];
+            return new Zr3i.Modules.Verification.AssessHandler(
+                sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<Zr3i.Kernel.Methods.MethodRegistry>(), sp.GetRequiredService<Zr3i.Kernel.Crops.CropConfigs>(),
+                edges.Length > 0 ? new Zr3i.Modules.Verification.SizeClassScheme(edges) : null, sp.GetRequiredService<TimeProvider>());
+        });
     }
 }
 
