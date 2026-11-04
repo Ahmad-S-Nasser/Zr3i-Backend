@@ -37,6 +37,10 @@ public static class FindingEndpoints
             })).RequireAuthorization();
     }
 
+    public static void MapAccuracyEndpoints(this IEndpointRouteBuilder app) =>
+        app.MapGet("/api/organisations/{tenantId}/verification/accuracy", async (string tenantId, HttpContext http, Guard guard, AccuracyRegister register, CancellationToken ct) =>
+            await guard.RunAsync(http, tenantId, Read, ct, async () => Results.Ok(await register.ListAsync(TenantScope.ForTenant(tenantId), ct)))).RequireAuthorization();
+
     private static object Shape(Finding f, bool current) => new
     {
         id = f.Id, parcelSeasonId = f.ParcelSeasonId, season = f.Season, type = f.Type, status = f.Status, reason = f.Reason, current, supersedes = f.Supersedes,
