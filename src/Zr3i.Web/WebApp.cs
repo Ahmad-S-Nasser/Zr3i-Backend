@@ -41,6 +41,7 @@ public static class WebApp
         builder.Services.AddSingleton<PlatformService>();
         builder.Services.AddSingleton<AccessRequestService>();
         builder.Services.AddSingleton<MethodRegistry>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Crops.CropConfigs>();
         builder.Services.AddSingleton<SceneCatalog>();
         builder.Services.AddSingleton(sp => new IngestPlanner(sp.GetRequiredService<SceneCatalog>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new DiscoveryPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
@@ -113,6 +114,7 @@ public static class WebApp
         app.MapConsentEndpoints();
         app.MapReadabilityEndpoints();
         app.MapMethodEndpoints();
+        app.MapCropEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();
 

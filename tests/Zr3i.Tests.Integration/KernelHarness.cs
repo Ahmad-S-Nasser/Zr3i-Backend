@@ -46,6 +46,7 @@ public sealed class KernelHarness
         Gate = new ConsentGate(Store, Audit, Clock);
         Methods = new MethodRegistry(Store, Audit, Clock);
         Scenes = new SceneCatalog(Store, Audit, Clock);
+        Crops = new Zr3i.Kernel.Crops.CropConfigs(Store, Audit, Clock);
         Discovery = new DiscoveryPlanner(Store, Data.Jobs, Audit, Clock);
         AccessRequests = new AccessRequestService(Store, AccountTypes, Organisations, Invitations, Audit, Clock);
         SignIn = new SignInService(Store, hasher, Audit, Clock);
@@ -76,6 +77,7 @@ public sealed class KernelHarness
     public AccessRequestService AccessRequests { get; }
     public MethodRegistry Methods { get; }
     public SceneCatalog Scenes { get; }
+    public Zr3i.Kernel.Crops.CropConfigs Crops { get; }
     public DiscoveryPlanner Discovery { get; }
     public FarmerService FarmerService { get; }
     public ConsentService Consent { get; }

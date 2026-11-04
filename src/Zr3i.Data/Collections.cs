@@ -29,4 +29,6 @@ public static class Collections
     public const string MethodVersions = "method_versions";
     public const string Scenes = "scenes";
     public const string ParcelObservations = "parcel_observations";
+    public const string CropConfigVersions = "crop_config_versions";
+    public const string CropConfigActivations = "crop_config_activations";
 }

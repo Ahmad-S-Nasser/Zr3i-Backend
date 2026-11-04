@@ -34,7 +34,7 @@ public sealed class DataStore(IMongoDatabase database)
 
     /// <summary>Applies the Kernel migrations (indexes). Modules add theirs as they appear.</summary>
     public Task<IReadOnlyList<string>> MigrateAsync(CancellationToken ct = default) =>
-        new MigrationRunner(database, [new KernelIndexesMigration(), new FarmIndexesMigration(), new JobIndexesMigration(), new ImportIndexesMigration(), new AccountIndexesMigration(), new MethodIndexesMigration(), new SceneIndexesMigration()]).RunAsync(ct);
+        new MigrationRunner(database, [new KernelIndexesMigration(), new FarmIndexesMigration(), new JobIndexesMigration(), new ImportIndexesMigration(), new AccountIndexesMigration(), new MethodIndexesMigration(), new SceneIndexesMigration(), new CropConfigIndexesMigration()]).RunAsync(ct);
 
     public async Task<bool> PingAsync(CancellationToken ct = default)
     {
