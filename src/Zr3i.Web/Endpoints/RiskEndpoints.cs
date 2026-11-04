@@ -53,6 +53,37 @@ public static class RiskEndpoints
             await guard.RunAsync(http, tenantId, Read, ct, async () =>
                 Results.Ok((await risk.FriHistoryAsync(TenantScope.ForTenant(tenantId), farmId, season, ct)).Select(Shape)))).RequireAuthorization();
 
+        app.MapGet("/api/organisations/{tenantId}/risk/parcel-seasons/{parcelSeasonId}/summary", async (string tenantId, string parcelSeasonId, HttpContext http, Guard guard, RiskService risk, CancellationToken ct) =>
+            await guard.RunAsync(http, tenantId, Read, ct, async () =>
+            {
+                var s = await risk.ParcelSummaryAsync(TenantScope.ForTenant(tenantId), parcelSeasonId, ct);
+                return Results.Ok(new
+                {
+                    maturity = IndicatorMaturity.Specified, label = "specified_not_calibrated", method = new { id = CriCalculator.MethodId, version = CriCalculator.MethodVersion },
+                    subject = new { parcelSeasonId = s.Subject.ParcelSeasonId, parcelId = s.Subject.ParcelId, label = s.Subject.Label, farmId = s.Subject.FarmId, farmName = s.Subject.FarmName, season = s.Subject.Season, crop = s.Subject.Crop, areaFeddan = s.Subject.AreaFeddan },
+                    current = s.Current is null ? null : Shape(s.Current), history = s.History.Select(Shape),
+                });
+            })).RequireAuthorization();
+
+        app.MapGet("/api/organisations/{tenantId}/risk/farms/{farmId}/seasons/{season}/summary", async (string tenantId, string farmId, string season, HttpContext http, Guard guard, RiskService risk, CancellationToken ct) =>
+            await guard.RunAsync(http, tenantId, Read, ct, async () =>
+            {
+                var s = await risk.FarmSummaryAsync(TenantScope.ForTenant(tenantId), farmId, season, ct);
+                return Results.Ok(new
+                {
+                    maturity = IndicatorMaturity.Specified, label = "specified_not_calibrated", method = new { id = FriCalculator.MethodId, version = FriCalculator.MethodVersion },
+                    farm = new { id = s.Farm.Id, name = s.Farm.Name, governorate = s.Farm.Governorate }, season = s.Season,
+                    fri = s.Fri is null ? null : Shape(s.Fri), friStale = s.FriStale, awcri = s.Awcri, adjustmentsSum = s.AdjustmentsSum,
+                    parcelCount = s.ParcelCount, totalAreaFeddan = s.TotalAreaFeddan, seasonsOnFile = s.SeasonsOnFile,
+                    parcels = s.Parcels.Select(p => new
+                    {
+                        parcelSeasonId = p.ParcelSeasonId, parcelId = p.ParcelId, label = p.Label, crop = p.Crop, areaFeddan = p.AreaFeddan, cri = p.Cri, areaTimesCri = p.AreaTimesCri,
+                        status = p.Status, closedSeasons = p.ClosedSeasons, band = BandShape(p.Band), bandReason = p.BandReason,
+                    }),
+                    exposure = s.Exposure is null ? null : new { parcelSeasonId = s.Exposure.ParcelSeasonId, label = s.Exposure.Label, crop = s.Exposure.Crop, areaFeddan = s.Exposure.AreaFeddan, cri = s.Exposure.Cri, areaSharePercent = s.Exposure.AreaSharePercent, awcriWithout = s.Exposure.AwcriWithout },
+                });
+            })).RequireAuthorization();
+
         app.MapPost("/api/organisations/{tenantId}/risk/reference-distributions", async (string tenantId, ReferenceBody b, HttpContext http, Guard guard, RiskService risk, CancellationToken ct) =>
             await guard.RunAsync(http, tenantId, WriteReferences, ct, async () =>
             {
@@ -61,18 +92,28 @@ public static class RiskEndpoints
             })).RequireAuthorization();
     }
 
+    private static double EstablishedWeight(IndicatorResult r) => r.Components.Where(c => c.Established).Sum(c => c.Weight);
+
+    private static object? BandShape(BandAssessment? b) => b is null ? null
+        : new { band = b.Band, percentile = b.Percentile, cohortLevel = b.CohortLevel, cohortKey = b.CohortKey, referenceVersion = b.ReferenceVersion, referenceSize = b.ReferenceSize, referenceSha256 = b.ReferenceSha256 };
+
     private static object Shape(IndicatorView v) => new
     {
         id = v.Result.Id, indicator = v.Result.Indicator, subjectType = v.Result.SubjectType, subjectId = v.Result.SubjectId,
         value = v.Result.Value, current = v.Current, supersedes = v.Result.Supersedes,
         maturity = v.Result.Maturity, label = "specified_not_calibrated",
         method = new { id = v.Result.MethodId, version = v.Result.MethodVersion },
-        components = v.Result.Components.Select(c => new { key = c.Key, weight = c.Weight, score = c.Score, established = c.Established }),
+        components = v.Result.Components.Select(c => new
+        {
+            key = c.Key, weight = c.Weight, score = c.Score, established = c.Established, feature = c.Feature, featureValue = c.FeatureValue,
+            contribution = c.Score is { } sc && EstablishedWeight(v.Result) > 0 ? sc * c.Weight / EstablishedWeight(v.Result) : (double?)null,
+        }),
+        establishedWeight = EstablishedWeight(v.Result), weightedSum = v.Result.Components.Where(c => c.Established).Sum(c => c.Score!.Value * c.Weight), closedSeasons = v.Result.ClosedSeasons,
         missingComponents = v.Result.MissingComponents,
         adjustments = v.Result.Adjustments.Select(a => new { key = a.Key, value = a.Value }),
         validFraction = v.Result.ValidFraction, insufficient = v.Result.Insufficient,
         inputSha256 = v.Result.InputSha256,
-        band = v.Band is null ? null : new { band = v.Band.Band, percentile = v.Band.Percentile, cohortLevel = v.Band.CohortLevel, cohortKey = v.Band.CohortKey, referenceVersion = v.Band.ReferenceVersion, referenceSize = v.Band.ReferenceSize, referenceSha256 = v.Band.ReferenceSha256 },
+        band = BandShape(v.Band),
         bandReason = v.BandReason, createdAt = v.Result.CreatedAt,
     };
 }

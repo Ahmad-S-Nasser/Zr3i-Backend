@@ -56,16 +56,16 @@ public static class CriCalculator
 
     public static CriComputation Compute(CriFeatures f)
     {
-        IndicatorComponent C(string key, double weight, double? score) => new(key, weight, score, score is not null);
+        IndicatorComponent C(string key, double weight, double? score, string feature, double? value) => new(key, weight, score, score is not null, feature, value);
         IndicatorComponent[] components =
         [
-            C("water_security", 25, ComponentScores.WaterSecurity(f.NdmiMin)),
-            C("climate_exposure", 20, ComponentScores.ClimateExposure(f.HeatStress)),
-            C("soil_and_land", 15, ComponentScores.SoilAndLand(f.NdviIntegral)),
-            C("yield_stability", 15, ComponentScores.YieldStability(f.ClosedSeasonYields)),
-            C("management_quality", 10, ComponentScores.ManagementQuality(f.NdviIntegral)),
-            C("tenure_and_rights", 8, ComponentScores.TenureAndRights(f.AreaVariancePct)),
-            C("peer_and_context", 7, ComponentScores.PeerAndContext(f.NdviCohortPercentile)),
+            C("water_security", 25, ComponentScores.WaterSecurity(f.NdmiMin), "ndmi_min", f.NdmiMin),
+            C("climate_exposure", 20, ComponentScores.ClimateExposure(f.HeatStress), "heat_stress", f.HeatStress),
+            C("soil_and_land", 15, ComponentScores.SoilAndLand(f.NdviIntegral), "ndvi_integral", f.NdviIntegral),
+            C("yield_stability", 15, ComponentScores.YieldStability(f.ClosedSeasonYields), "yield_history", null),
+            C("management_quality", 10, ComponentScores.ManagementQuality(f.NdviIntegral), "ndvi_integral", f.NdviIntegral),
+            C("tenure_and_rights", 8, ComponentScores.TenureAndRights(f.AreaVariancePct), "area_variance_pct", f.AreaVariancePct),
+            C("peer_and_context", 7, ComponentScores.PeerAndContext(f.NdviCohortPercentile), "ndvi_cohort_percentile", f.NdviCohortPercentile),
         ];
 
         var established = components.Where(c => c.Established).ToArray();

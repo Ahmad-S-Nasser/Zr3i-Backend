@@ -15,6 +15,6 @@ public sealed class CriService(IndicatorRecorder recorder)
         if (cri.Value is not { } value) throw new ValidationFailedException("no_established_components");
 
         return recorder.RecordAsync(scope, actorUserId, new IndicatorDraft(
-            IndicatorKinds.Cri, "parcel_season", parcelSeasonId, CriCalculator.MethodId, CriCalculator.MethodVersion, cri.Components, value, cri.ValidFraction, cri.Insufficient), ct);
+            IndicatorKinds.Cri, "parcel_season", parcelSeasonId, CriCalculator.MethodId, CriCalculator.MethodVersion, cri.Components, value, cri.ValidFraction, cri.Insufficient, null, features.ClosedSeasonYields?.Count), ct);
     }
 }

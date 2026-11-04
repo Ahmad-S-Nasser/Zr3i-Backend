@@ -79,4 +79,17 @@ public class CriRecordingTests(MongoFixture mongo)
         Assert.Contains("no_established_components", ex.Codes);
         Assert.Empty(await k.Store.IndicatorResults.FindAsync(A, r => r.SubjectId == "EMPTY"));
     }
+
+    [Fact]
+    public async Task ADifferentFeatureValueIsANewResultEvenWhenItClampsToTheSameScore()
+    {
+        var (k, svc) = await NewAsync();
+        var a = await svc.RecordAsync(A, "u", "CLAMP", Ks03 with { NdmiMin = 10.0 });                          // below the ramp: score 85
+        var b = await svc.RecordAsync(A, "u", "CLAMP", Ks03 with { NdmiMin = 5.0 });                           // further below: still 85
+
+        Assert.Equal(a.Components.Single(c => c.Key == "water_security").Score, b.Components.Single(c => c.Key == "water_security").Score);
+        Assert.NotEqual(a.InputSha256, b.InputSha256);
+        Assert.Equal(a.Id, b.Supersedes);
+        Assert.Equal((5.0, 8), (b.Components.Single(c => c.Key == "water_security").FeatureValue, b.ClosedSeasons));
+    }
 }

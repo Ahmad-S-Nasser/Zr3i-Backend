@@ -2,8 +2,8 @@ using Zr3i.Data;
 
 namespace Zr3i.Kernel.Indicators;
 
-/// <summary>One component of an indicator. A component without data is stored with its weight and no score; it is never zero.</summary>
-public sealed record IndicatorComponent(string Key, double Weight, double? Score, bool Established);
+/// <summary>One component of an indicator, with the feature (and its value) it was scored from. A component without data is stored with its weight and no score; it is never zero.</summary>
+public sealed record IndicatorComponent(string Key, double Weight, double? Score, bool Established, string? Feature = null, double? FeatureValue = null);
 
 /// <summary>A farm-level adjustment added to the area-weighted mean. A null value means it was not supplied and was not applied.</summary>
 public sealed record IndicatorAdjustment(string Key, double? Value);
@@ -43,6 +43,9 @@ public sealed class IndicatorResult : ITenantEntity
     public double Value { get; set; }
     public List<IndicatorComponent> Components { get; set; } = [];
     public List<string> MissingComponents { get; set; } = [];
+
+    /// <summary>Closed harvest seasons that went into the yield history (CRI only). Null when none were supplied.</summary>
+    public int? ClosedSeasons { get; set; }
 
     /// <summary>Farm-level adjustments (FRI only). Empty for a CRI.</summary>
     public List<IndicatorAdjustment> Adjustments { get; set; } = [];

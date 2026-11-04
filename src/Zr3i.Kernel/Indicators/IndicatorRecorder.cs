@@ -7,7 +7,7 @@ namespace Zr3i.Kernel.Indicators;
 
 public sealed record IndicatorDraft(
     string Indicator, string SubjectType, string SubjectId, string MethodId, int MethodVersion, IReadOnlyList<IndicatorComponent> Components, double Value,
-    double? ValidFraction = null, bool Insufficient = false, IReadOnlyList<IndicatorAdjustment>? Adjustments = null);
+    double? ValidFraction = null, bool Insufficient = false, IReadOnlyList<IndicatorAdjustment>? Adjustments = null, int? ClosedSeasons = null);
 
 /// <summary>Writes indicator results under the immutability rules. It does no scoring: the caller supplies the components and the value.</summary>
 public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
@@ -27,7 +27,7 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
             Indicator = draft.Indicator, SubjectType = draft.SubjectType, SubjectId = draft.SubjectId, MethodId = draft.MethodId, MethodVersion = draft.MethodVersion,
             InputSha256 = hash, Value = draft.Value, Components = [.. draft.Components.OrderBy(c => c.Key, StringComparer.Ordinal)],
             MissingComponents = [.. draft.Components.Where(c => !c.Established).Select(c => c.Key).Order(StringComparer.Ordinal)],
-            ValidFraction = draft.ValidFraction, Insufficient = draft.Insufficient,
+            ValidFraction = draft.ValidFraction, Insufficient = draft.Insufficient, ClosedSeasons = draft.ClosedSeasons,
             Adjustments = [.. (draft.Adjustments ?? []).OrderBy(a => a.Key, StringComparer.Ordinal)],
             Maturity = IndicatorMaturity.Specified, Supersedes = latest?.Id, CreatedAt = clock.GetUtcNow().UtcDateTime, CreatedBy = actorUserId,
         };
@@ -89,8 +89,8 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
     public static string HashOf(IndicatorDraft d)
     {
         static string N(double? v) => v is null ? "-" : v.Value.ToString("R", CultureInfo.InvariantCulture);
-        var parts = d.Components.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => $"{c.Key}={N(c.Weight)}:{N(c.Score)}:{(c.Established ? 1 : 0)}");
-        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts), N(d.ValidFraction), d.Insufficient ? 1 : 0)
+        var parts = d.Components.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => $"{c.Key}={N(c.Weight)}:{N(c.Score)}:{(c.Established ? 1 : 0)}:{c.Feature ?? "-"}:{N(c.FeatureValue)}");
+        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts), N(d.ValidFraction), d.Insufficient ? 1 : 0, d.ClosedSeasons?.ToString(CultureInfo.InvariantCulture) ?? "-")
             + (d.Adjustments is null ? string.Empty : "|adj:" + string.Join(';', d.Adjustments.OrderBy(a => a.Key, StringComparer.Ordinal).Select(a => a.Key + "=" + N(a.Value))));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     }
