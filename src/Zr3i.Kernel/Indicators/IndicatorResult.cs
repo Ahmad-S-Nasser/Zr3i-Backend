@@ -41,6 +41,10 @@ public sealed class IndicatorResult : ITenantEntity
     public List<IndicatorComponent> Components { get; set; } = [];
     public List<string> MissingComponents { get; set; } = [];
 
+    /// <summary>Usable share of the parcel's observations, and whether it fell below the validity floor (such a result is excluded from the farm roll-up).</summary>
+    public double? ValidFraction { get; set; }
+    public bool Insufficient { get; set; }
+
     /// <summary>specified, calibrated or validated. Always specified until calibration is done.</summary>
     public string Maturity { get; set; } = IndicatorMaturity.Specified;
     public string? Supersedes { get; set; }

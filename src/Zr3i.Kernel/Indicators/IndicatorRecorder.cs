@@ -6,7 +6,8 @@ using Zr3i.Data;
 namespace Zr3i.Kernel.Indicators;
 
 public sealed record IndicatorDraft(
-    string Indicator, string SubjectType, string SubjectId, string MethodId, int MethodVersion, IReadOnlyList<IndicatorComponent> Components, double Value);
+    string Indicator, string SubjectType, string SubjectId, string MethodId, int MethodVersion, IReadOnlyList<IndicatorComponent> Components, double Value,
+    double? ValidFraction = null, bool Insufficient = false);
 
 /// <summary>Writes indicator results under the immutability rules. It does no scoring: the caller supplies the components and the value.</summary>
 public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
@@ -26,6 +27,7 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
             Indicator = draft.Indicator, SubjectType = draft.SubjectType, SubjectId = draft.SubjectId, MethodId = draft.MethodId, MethodVersion = draft.MethodVersion,
             InputSha256 = hash, Value = draft.Value, Components = [.. draft.Components.OrderBy(c => c.Key, StringComparer.Ordinal)],
             MissingComponents = [.. draft.Components.Where(c => !c.Established).Select(c => c.Key).Order(StringComparer.Ordinal)],
+            ValidFraction = draft.ValidFraction, Insufficient = draft.Insufficient,
             Maturity = IndicatorMaturity.Specified, Supersedes = latest?.Id, CreatedAt = clock.GetUtcNow().UtcDateTime, CreatedBy = actorUserId,
         };
         try
@@ -68,6 +70,7 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
         if (string.IsNullOrWhiteSpace(d.SubjectId)) errors.Add("invalid_subject");
         if (string.IsNullOrWhiteSpace(d.MethodId) || d.MethodVersion < 1) errors.Add("invalid_method");
         if (!double.IsFinite(d.Value)) errors.Add("invalid_value");
+        if (d.ValidFraction is { } vf && (!double.IsFinite(vf) || vf < 0 || vf > 1)) errors.Add("invalid_valid_fraction");
         if (d.Components.Count == 0) errors.Add("no_components");
         if (d.Components.Any(c => string.IsNullOrWhiteSpace(c.Key) || !double.IsFinite(c.Weight) || c.Weight <= 0)) errors.Add("invalid_weight");
         if (d.Components.GroupBy(c => c.Key, StringComparer.Ordinal).Any(g => g.Count() > 1)) errors.Add("duplicate_component");
@@ -81,7 +84,7 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
     {
         static string N(double? v) => v is null ? "-" : v.Value.ToString("R", CultureInfo.InvariantCulture);
         var parts = d.Components.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => $"{c.Key}={N(c.Weight)}:{N(c.Score)}:{(c.Established ? 1 : 0)}");
-        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts));
+        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts), N(d.ValidFraction), d.Insufficient ? 1 : 0);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     }
 }
