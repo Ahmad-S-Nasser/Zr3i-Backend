@@ -39,6 +39,7 @@ public sealed class KernelStore(DataStore data)
     public AppendOnlyRepository<ParcelObservation> ParcelObservations { get; } = data.AppendOnly<ParcelObservation>(Collections.ParcelObservations);
 
     public TenantRepository<Scene> Scenes { get; } = data.Tenant<Scene>(Collections.Scenes);
+    public AppendOnlyRepository<Zr3i.Kernel.Indicators.IndicatorResult> IndicatorResults { get; } = data.AppendOnly<Zr3i.Kernel.Indicators.IndicatorResult>(Collections.IndicatorResults);
     public AppendOnlyRepository<Zr3i.Kernel.Findings.Finding> Findings { get; } = data.AppendOnly<Zr3i.Kernel.Findings.Finding>(Collections.Findings);
     public AppendOnlyRepository<Zr3i.Kernel.Crops.CropConfigVersion> CropConfigVersions { get; } = data.AppendOnly<Zr3i.Kernel.Crops.CropConfigVersion>(Collections.CropConfigVersions);
     public AppendOnlyRepository<Zr3i.Kernel.Crops.CropConfigActivation> CropConfigActivations { get; } = data.AppendOnly<Zr3i.Kernel.Crops.CropConfigActivation>(Collections.CropConfigActivations);
