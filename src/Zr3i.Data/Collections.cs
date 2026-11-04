@@ -31,6 +31,7 @@ public static class Collections
     public const string ParcelObservations = "parcel_observations";
     public const string Findings = "findings";
     public const string IndicatorResults = "indicator_results";
+    public const string ReferenceDistributions = "reference_distributions";
     public const string CropConfigVersions = "crop_config_versions";
     public const string CropConfigActivations = "crop_config_activations";
 }

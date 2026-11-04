@@ -7,7 +7,7 @@ namespace Zr3i.Kernel.Indicators;
 
 public sealed record IndicatorDraft(
     string Indicator, string SubjectType, string SubjectId, string MethodId, int MethodVersion, IReadOnlyList<IndicatorComponent> Components, double Value,
-    double? ValidFraction = null, bool Insufficient = false);
+    double? ValidFraction = null, bool Insufficient = false, IReadOnlyList<IndicatorAdjustment>? Adjustments = null);
 
 /// <summary>Writes indicator results under the immutability rules. It does no scoring: the caller supplies the components and the value.</summary>
 public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
@@ -28,6 +28,7 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
             InputSha256 = hash, Value = draft.Value, Components = [.. draft.Components.OrderBy(c => c.Key, StringComparer.Ordinal)],
             MissingComponents = [.. draft.Components.Where(c => !c.Established).Select(c => c.Key).Order(StringComparer.Ordinal)],
             ValidFraction = draft.ValidFraction, Insufficient = draft.Insufficient,
+            Adjustments = [.. (draft.Adjustments ?? []).OrderBy(a => a.Key, StringComparer.Ordinal)],
             Maturity = IndicatorMaturity.Specified, Supersedes = latest?.Id, CreatedAt = clock.GetUtcNow().UtcDateTime, CreatedBy = actorUserId,
         };
         try
@@ -71,6 +72,11 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
         if (string.IsNullOrWhiteSpace(d.MethodId) || d.MethodVersion < 1) errors.Add("invalid_method");
         if (!double.IsFinite(d.Value)) errors.Add("invalid_value");
         if (d.ValidFraction is { } vf && (!double.IsFinite(vf) || vf < 0 || vf > 1)) errors.Add("invalid_valid_fraction");
+        if (d.Adjustments is { } adj)
+        {
+            if (adj.Any(a => string.IsNullOrWhiteSpace(a.Key) || (a.Value is { } av && !double.IsFinite(av)))) errors.Add("invalid_adjustment");
+            if (adj.GroupBy(a => a.Key, StringComparer.Ordinal).Any(g => g.Count() > 1)) errors.Add("duplicate_adjustment");
+        }
         if (d.Components.Count == 0) errors.Add("no_components");
         if (d.Components.Any(c => string.IsNullOrWhiteSpace(c.Key) || !double.IsFinite(c.Weight) || c.Weight <= 0)) errors.Add("invalid_weight");
         if (d.Components.GroupBy(c => c.Key, StringComparer.Ordinal).Any(g => g.Count() > 1)) errors.Add("duplicate_component");
@@ -84,7 +90,8 @@ public sealed class IndicatorRecorder(KernelStore store, TimeProvider clock)
     {
         static string N(double? v) => v is null ? "-" : v.Value.ToString("R", CultureInfo.InvariantCulture);
         var parts = d.Components.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => $"{c.Key}={N(c.Weight)}:{N(c.Score)}:{(c.Established ? 1 : 0)}");
-        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts), N(d.ValidFraction), d.Insufficient ? 1 : 0);
+        var text = string.Join('|', d.Indicator, d.SubjectType, d.SubjectId, d.MethodId, d.MethodVersion, string.Join(';', parts), N(d.ValidFraction), d.Insufficient ? 1 : 0)
+            + (d.Adjustments is null ? string.Empty : "|adj:" + string.Join(';', d.Adjustments.OrderBy(a => a.Key, StringComparer.Ordinal).Select(a => a.Key + "=" + N(a.Value))));
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     }
 }

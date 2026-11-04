@@ -5,6 +5,9 @@ namespace Zr3i.Kernel.Indicators;
 /// <summary>One component of an indicator. A component without data is stored with its weight and no score; it is never zero.</summary>
 public sealed record IndicatorComponent(string Key, double Weight, double? Score, bool Established);
 
+/// <summary>A farm-level adjustment added to the area-weighted mean. A null value means it was not supplied and was not applied.</summary>
+public sealed record IndicatorAdjustment(string Key, double? Value);
+
 public static class IndicatorKinds
 {
     public const string Cri = "CRI";
@@ -40,6 +43,9 @@ public sealed class IndicatorResult : ITenantEntity
     public double Value { get; set; }
     public List<IndicatorComponent> Components { get; set; } = [];
     public List<string> MissingComponents { get; set; } = [];
+
+    /// <summary>Farm-level adjustments (FRI only). Empty for a CRI.</summary>
+    public List<IndicatorAdjustment> Adjustments { get; set; } = [];
 
     /// <summary>Usable share of the parcel's observations, and whether it fell below the validity floor (such a result is excluded from the farm roll-up).</summary>
     public double? ValidFraction { get; set; }
