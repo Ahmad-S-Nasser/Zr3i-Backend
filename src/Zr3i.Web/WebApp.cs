@@ -44,6 +44,11 @@ public static class WebApp
         builder.Services.AddSingleton<Zr3i.Kernel.Crops.CropConfigs>();
         builder.Services.AddSingleton<SceneCatalog>();
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.AccuracyRegister>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Indicators.IndicatorRecorder>();
+        builder.Services.AddSingleton<Zr3i.Modules.Risk.CriService>();
+        builder.Services.AddSingleton<Zr3i.Modules.Risk.FriService>();
+        builder.Services.AddSingleton<Zr3i.Modules.Risk.ReferenceService>();
+        builder.Services.AddSingleton<Zr3i.Modules.Risk.RiskService>();
         builder.Services.AddSingleton(sp => new Zr3i.Kernel.Findings.AssessmentPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new IngestPlanner(sp.GetRequiredService<SceneCatalog>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(sp => new DiscoveryPlanner(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
@@ -119,6 +124,7 @@ public static class WebApp
         app.MapCropEndpoints();
         app.MapFindingEndpoints();
         app.MapAccuracyEndpoints();
+        app.MapRiskEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();
 
