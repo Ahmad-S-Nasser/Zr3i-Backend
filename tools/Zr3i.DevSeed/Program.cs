@@ -5,7 +5,9 @@ using Zr3i.Data;
 using Zr3i.Geo;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Accounts;
+using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
+using Zr3i.Kernel.Findings;
 using Zr3i.Kernel.Identity;
 using Zr3i.Kernel.Indicators;
 using Zr3i.Modules.Risk;
@@ -53,6 +55,8 @@ var orgNames = new Dictionary<string, string>
 
 var personas = new List<object>();
 string companyOrgId = "";
+string farmerOrgId = "";
+string bankOrgId = "";
 foreach (var type in BuiltInAccountTypes.All)
 {
     TenantScope scope;
@@ -71,6 +75,8 @@ foreach (var type in BuiltInAccountTypes.All)
     }
 
     if (type.Key == "company") companyOrgId = orgId;
+    if (type.Key == "farmer") farmerOrgId = orgId;
+    if (type.Key == "bank") bankOrgId = orgId;
 
     foreach (var roleKey in type.RoleKeys)
     {
@@ -90,6 +96,7 @@ foreach (var type in BuiltInAccountTypes.All)
 }
 
 await SeedCompanyDataAsync(TenantScope.ForTenant(companyOrgId));
+await SeedFarmerDataAsync(TenantScope.ForTenant(farmerOrgId), bankOrgId);
 
 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
 File.WriteAllText(outPath, JsonSerializer.Serialize(new { password = DevPassword, personas }, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
@@ -146,4 +153,44 @@ async Task SeedCompanyDataAsync(TenantScope scope)
 
     await risk.RecordFriAsync(scope, "seed", farm.Id, "2026-27",
         [new("crop_concentration", 1.2), new("spatial_concentration", 3.1), new("irrigation_diversity", 2.0), new("record_length", -5.8), new("worst_parcel_exposure", 1.2)]);
+}
+
+// Synthetic data for the Farmer organisation: its own farm with three parcels, a declared area each, and one area finding of each kind,
+// plus a consent grant to the bank so "Who can see my data" has an entry. Findings are written directly because the worker is not part of seeding.
+async Task SeedFarmerDataAsync(TenantScope scope, string granteeOrgId)
+{
+    var farms = S<FarmService>();
+    var self = (await S<FarmerService>().ListAsync(scope)).Single();
+    var farm = await farms.CreateFarmAsync(scope, "seed", new NewFarm("Hassan Farm", Governorate: "Kafr El Sheikh", FarmerId: self.Id));
+    var captured = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+    var store = S<KernelStore>();
+
+    // (label, boundary side in metres or null, declared feddan, finding status, reason, gap percent)
+    (string Label, double? Side, double Declared, string Status, string? Reason, double? Gap)[] parcels =
+    [
+        ("P-0021", 150, 10.0, "FLAGGED", null, 46.4),
+        ("P-0022", 150, 5.4, "MEASURED", null, 0.8),
+        ("P-0023", null, 3.0, "NOT_ASSESSABLE", "no_boundary", null),
+        ("P-0024", 20, 0.1, "NOT_ASSESSABLE", "below_resolution", null),
+    ];
+
+    foreach (var (label, side, declared, status, reason, gap) in parcels)
+    {
+        var parcel = await farms.CreateParcelAsync(scope, "seed", new NewParcel(farm.Id, label));
+        if (side is { } sd)
+        {
+            var corners = new[] { (303800.0, 3409200.0), (303800 + sd, 3409200.0), (303800 + sd, 3409200 + sd), (303800.0, 3409200 + sd), (303800.0, 3409200.0) };
+            var ring = corners.Select(c => { var (lon, lat) = Epsg32636.ToLonLat(c.Item1, c.Item2); return new LonLat(lon, lat); });
+            await S<BoundaryService>().AddAsync(scope, "seed", parcel.Id, PolygonInput.FromExterior(ring), new BoundaryProvenance("survey", "dev seed", captured, 1));
+        }
+
+        var season = await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(parcel.Id, "2026-27", "wheat", declared, "2026-10-01", "contract"));
+        await store.Findings.InsertAsync(scope, new Finding
+        {
+            ParcelId = parcel.Id, ParcelSeasonId = season.Id, Season = "2026-27", Slot = FindingSlots.Area, Type = reason == null ? "area_gap" : "not_assessable", Status = status, Reason = reason,
+            GapPercent = gap, Direction = gap is null ? null : "OverDeclared", InputSha256 = Guid.NewGuid().ToString("N"), CreatedAt = DateTime.UtcNow, CreatedBy = "seed",
+        });
+    }
+
+    await S<ConsentService>().GrantAsync(scope, "seed", new GrantTerms(self.Id, granteeOrgId, "Verify input finance", DateTime.UtcNow.AddDays(90), null, null));
 }
