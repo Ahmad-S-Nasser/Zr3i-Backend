@@ -64,6 +64,18 @@ internal static class JobHandlers
         services.AddSingleton<Zr3i.Kernel.Methods.MethodRegistry>();
         services.AddSingleton<IJobHandler, IngestHandler>();
 
+        // Reports: the same read services the screens use, a browser for PDFs (the only place one is used), and the freeze handler.
+        services.AddSingleton<Zr3i.Kernel.Farms.ParcelListService>();
+        services.AddSingleton<Zr3i.Kernel.Programmes.TrancheService>();
+        services.AddSingleton<Zr3i.Kernel.Indicators.IndicatorRecorder>();
+        services.AddSingleton<Zr3i.Modules.Risk.CriService>();
+        services.AddSingleton<Zr3i.Modules.Risk.FriService>();
+        services.AddSingleton<Zr3i.Modules.Risk.ReferenceService>();
+        services.AddSingleton<Zr3i.Modules.Risk.RiskService>();
+        services.AddSingleton<Zr3i.Reports.SnapshotBuilder>();
+        services.AddSingleton<Zr3i.Reports.IPdfRenderer>(sp => new Zr3i.Reports.ChromiumPdfRenderer(sp.GetRequiredService<IConfiguration>()["Reports:BrowserPath"]));
+        services.AddSingleton<IJobHandler, Zr3i.Reports.ReportFreezeHandler>();
+
         // Assessing a season: the per-crop settings and the findings handler. Size classes come from the same configuration as the web app.
         services.AddSingleton<Zr3i.Kernel.Crops.CropConfigs>();
         services.AddSingleton<IJobHandler>(sp =>

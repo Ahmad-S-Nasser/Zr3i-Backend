@@ -86,7 +86,8 @@
       "zr3i.reports": {
         "type": "Project",
         "dependencies": {
-          "Zr3i.Kernel": "[1.0.0, )"
+          "Zr3i.Kernel": "[1.0.0, )",
+          "Zr3i.Modules.Risk": "[1.0.0, )"
         }
       }
     }

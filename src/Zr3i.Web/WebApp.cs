@@ -48,6 +48,7 @@ public static class WebApp
         builder.Services.AddSingleton<ParcelListService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Programmes.TrancheService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Programmes.EventWindowService>();
+        builder.Services.AddSingleton(sp => new Zr3i.Kernel.Reports.ReportService(sp.GetRequiredService<KernelStore>(), sp.GetRequiredService<DataStore>().Jobs, sp.GetRequiredService<AuditService>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.VerificationAnalysisService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.MemberDirectoryService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.AuditReader>();
@@ -137,6 +138,7 @@ public static class WebApp
         app.MapFarmEndpoints();
         app.MapParcelEndpoints();
         app.MapTrancheEventEndpoints();
+        app.MapReportEndpoints();
         app.MapAdminReadEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();

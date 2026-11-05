@@ -74,6 +74,13 @@
           "Zr3i.Data": "[1.0.0, )",
           "Zr3i.Geo": "[1.0.0, )"
         }
+      },
+      "zr3i.modules.risk": {
+        "type": "Project",
+        "dependencies": {
+          "Zr3i.Geo": "[1.0.0, )",
+          "Zr3i.Kernel": "[1.0.0, )"
+        }
       }
     }
   }
