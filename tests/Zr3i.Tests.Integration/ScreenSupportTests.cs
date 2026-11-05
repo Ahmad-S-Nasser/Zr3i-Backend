@@ -66,16 +66,19 @@ public class ScreenSupportTests
         var (matches, matchesSeason) = await Make("P-0002", 150, 5.4);
         var (bare, _) = await Make("P-0003", null, 3.0);
 
-        async Task Finding(Parcel p, ParcelSeason ps, string status, double gapPercent, string? supersedes = null) =>
+        async Task Finding(Parcel p, ParcelSeason ps, string status, double gapPercent, string? supersedes = null, int hoursAhead = 0) =>
             await web.Service<KernelStore>().Findings.InsertAsync(scope, new Finding
             {
                 ParcelId = p.Id, ParcelSeasonId = ps.Id, Season = Season, Slot = FindingSlots.Area, Type = "area_gap", Status = status, GapPercent = gapPercent,
-                Direction = "OverDeclared", InputSha256 = Guid.NewGuid().ToString("N"), Supersedes = supersedes, CreatedAt = DateTime.UtcNow,
+                Direction = "OverDeclared", InputSha256 = Guid.NewGuid().ToString("N"), Supersedes = supersedes, CreatedAt = DateTime.UtcNow.AddHours(hoursAhead),
             });
-        await Finding(flagged, flaggedSeason, "MEASURED", 1.0);                       // an older finding that a later one replaces
+        await Finding(flagged, flaggedSeason, "MEASURED", 1.0, hoursAhead: 1);       // replaced by the next one, although its timestamp is later (clock skew)
         var older = (await web.Service<KernelStore>().Findings.FindAsync(scope, f => f.ParcelId == flagged.Id)).Single();
         await Finding(flagged, flaggedSeason, "FLAGGED", 46.4, supersedes: older.Id);
         await Finding(matches, matchesSeason, "MEASURED", 0.2);
+
+        // A declaration for another season must not leak into this season's row.
+        await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(matches.Id, "2025-26", "maize", 99.0, "2025-10-01", "contract"));
 
         var url = $"/api/organisations/{org.OrgId}/parcels?season={Season}";
         Assert.Equal(HttpStatusCode.Unauthorized, (await web.Http.GetAsync(url)).StatusCode);
@@ -90,6 +93,7 @@ public class ScreenSupportTests
         Assert.Equal(150.0 * 150 / 4200.83, a.GetProperty("measuredAreaFeddan").GetDouble(), 2);
         Assert.Equal(46.4, a.GetProperty("finding").GetProperty("gapPercent").GetDouble());           // the current finding, not the replaced one
         Assert.Equal("MEASURED", rows["P-0002"].GetProperty("finding").GetProperty("status").GetString());
+        Assert.Equal((5.4, "wheat"), (rows["P-0002"].GetProperty("declaredAreaFeddan").GetDouble(), rows["P-0002"].GetProperty("crop").GetString()));   // this season's declaration, not 2025-26's
         Assert.Equal((JsonValueKind.Null, JsonValueKind.Null), (rows["P-0003"].GetProperty("measuredAreaFeddan").ValueKind, rows["P-0003"].GetProperty("finding").ValueKind));
         Assert.Equal(3.0, rows["P-0003"].GetProperty("declaredAreaFeddan").GetDouble());
 
