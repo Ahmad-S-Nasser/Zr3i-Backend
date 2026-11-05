@@ -46,6 +46,8 @@ public static class WebApp
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.AccuracyRegister>();
         builder.Services.AddSingleton<FarmListService>();
         builder.Services.AddSingleton<ParcelListService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Programmes.TrancheService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Programmes.EventWindowService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.VerificationAnalysisService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.MemberDirectoryService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.AuditReader>();
@@ -134,6 +136,7 @@ public static class WebApp
         app.MapRiskEndpoints();
         app.MapFarmEndpoints();
         app.MapParcelEndpoints();
+        app.MapTrancheEventEndpoints();
         app.MapAdminReadEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();

@@ -61,19 +61,19 @@ public static class BuiltInAccountTypes
         {
             Key = "bank", LabelEn = "Bank", LabelAr = "بنك", Model = "b2b_lender",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "tranche-check", Navigation = ["tranches", "reports", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "tranche-check", Navigation = ["tranches", "reports", "imports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "insurance", LabelEn = "Insurance", LabelAr = "تأمين", Model = "b2b_insurer",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "risk", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "risk", "methodology", "imports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "company", LabelEn = "Company", LabelAr = "شركة", Model = "b2b",
             RoleKeys = ["org-admin", "analyst", "viewer", "field-user"], Modules = ["verification", "risk"],
-            HomeView = "portfolio", Navigation = ["portfolio", "farms", "parcels", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "portfolio", Navigation = ["portfolio", "farms", "parcels", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "reports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {

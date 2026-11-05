@@ -30,6 +30,8 @@ public static class Collections
     public const string Scenes = "scenes";
     public const string ParcelObservations = "parcel_observations";
     public const string Findings = "findings";
+    public const string Tranches = "tranches";
+    public const string EventWindows = "event_windows";
     public const string IndicatorResults = "indicator_results";
     public const string ReferenceDistributions = "reference_distributions";
     public const string CropConfigVersions = "crop_config_versions";

@@ -55,6 +55,20 @@ public sealed class ParcelListService(KernelStore store)
         return new ParcelList(await BuildAsync(scope, page.Items, s, ct), page.NextCursor, s);
     }
 
+    /// <summary>The given parcels as the lists show them, in label order. Parcels that are not in this organisation are simply absent.</summary>
+    public async Task<IReadOnlyList<ParcelListItem>> ForParcelsAsync(TenantScope scope, IReadOnlyList<string> parcelIds, string? season, CancellationToken ct = default)
+    {
+        var s = CleanSeason(season);
+        var items = new List<ParcelListItem>();
+        foreach (var chunk in parcelIds.Chunk(500))
+        {
+            var ids = chunk.ToList();
+            items.AddRange(await BuildAsync(scope, await store.Parcels.FindAsync(scope, x => ids.Contains(x.Id), 1000, ct), s, ct));
+        }
+
+        return [.. items.OrderBy(i => i.Label, StringComparer.Ordinal)];
+    }
+
     /// <summary>One parcel as the lists show it (null when it is not in this organisation).</summary>
     public async Task<ParcelListItem?> GetAsync(TenantScope scope, string parcelId, string? season, CancellationToken ct = default)
     {
