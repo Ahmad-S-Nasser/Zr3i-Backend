@@ -9,6 +9,7 @@ using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Findings;
 using Zr3i.Kernel.Imagery;
+using Zr3i.Kernel.Programmes;
 using Zr3i.Kernel.Identity;
 using Zr3i.Kernel.Indicators;
 using Zr3i.Modules.Risk;
@@ -58,6 +59,7 @@ var personas = new List<object>();
 string companyOrgId = "";
 string farmerOrgId = "";
 string bankOrgId = "";
+string insuranceOrgId = "";
 foreach (var type in BuiltInAccountTypes.All)
 {
     TenantScope scope;
@@ -78,6 +80,7 @@ foreach (var type in BuiltInAccountTypes.All)
     if (type.Key == "company") companyOrgId = orgId;
     if (type.Key == "farmer") farmerOrgId = orgId;
     if (type.Key == "bank") bankOrgId = orgId;
+    if (type.Key == "insurance") insuranceOrgId = orgId;
 
     foreach (var roleKey in type.RoleKeys)
     {
@@ -98,6 +101,8 @@ foreach (var type in BuiltInAccountTypes.All)
 
 await SeedCompanyDataAsync(TenantScope.ForTenant(companyOrgId));
 await SeedFarmerDataAsync(TenantScope.ForTenant(farmerOrgId), bankOrgId);
+await SeedBankDataAsync(TenantScope.ForTenant(bankOrgId));
+await SeedInsuranceDataAsync(TenantScope.ForTenant(insuranceOrgId));
 
 Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
 File.WriteAllText(outPath, JsonSerializer.Serialize(new { password = DevPassword, personas }, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
@@ -227,4 +232,66 @@ async Task SeedFarmerDataAsync(TenantScope scope, string granteeOrgId)
     }
 
     await S<ConsentService>().GrantAsync(scope, "seed", new GrantTerms(self.Id, granteeOrgId, "Verify input finance", DateTime.UtcNow.AddDays(90), null, null));
+}
+
+// A bank's own portfolio (imported by it, as the Account types board says) grouped into two tranches.
+async Task SeedBankDataAsync(TenantScope scope)
+{
+    var farms = S<FarmService>();
+    var farm = await farms.CreateFarmAsync(scope, "seed", new NewFarm("Delta Growers Programme", Governorate: "Kafr El Sheikh"));
+    (string Ext, double Side, double Declared, string Status, string? Reason, double? Gap)[] rows =
+    [
+        ("B-01", 150, 5.4, "MEASURED", null, 0.8), ("B-02", 150, 7.5, "FLAGGED", null, 28.0), ("B-03", 100, 2.4, "MEASURED", null, 0.2),
+        ("B-04", 100, 2.4, "PENDING", null, null), ("B-05", 20, 0.1, "NOT_ASSESSABLE", "below_resolution", null), ("B-06", 200, 9.5, "MEASURED", null, 0.1),
+    ];
+    foreach (var (ext, side, declared, status, reason, gap) in rows)
+    {
+        var parcel = await farms.CreateParcelAsync(scope, "seed", new NewParcel(farm.Id, ext.Replace("B-", "P-01"), ExternalId: ext));
+        await S<BoundaryService>().AddAsync(scope, "seed", parcel.Id, SquareOf(side), new BoundaryProvenance("survey", "dev seed", new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 1));
+        var season = await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(parcel.Id, "2026-27", "wheat", declared, "2026-10-01", "contract"));
+        await S<KernelStore>().Findings.InsertAsync(scope, new Finding
+        {
+            ParcelId = parcel.Id, ParcelSeasonId = season.Id, Season = "2026-27", Slot = FindingSlots.Area, Type = reason == null ? "area_gap" : "not_assessable", Status = status, Reason = reason,
+            GapPercent = gap, NoisePercent = gap is null ? null : 5.3, Direction = gap is null ? null : gap > 5.3 ? "OverDeclared" : "WithinNoise", MethodId = "ZR3I-R0-2026-01", MethodVersion = 1, MethodState = "draft",
+            AccuracyRef = "ZR3I-R0-2026-01/v1/area_gap/-/2-5", InputSha256 = Guid.NewGuid().ToString("N"), CreatedAt = DateTime.UtcNow, CreatedBy = "seed",
+        });
+    }
+
+    var tranches = S<TrancheService>();
+    await tranches.CreateAsync(scope, "seed", new TrancheRequest("TR-01", "2026-27", "2026-12-01", new ParcelSelection(null, null, ["B-01", "B-02", "B-03"])));
+    await tranches.CreateAsync(scope, "seed", new TrancheRequest("TR-02", "2026-27", "2027-02-15", new ParcelSelection([farm.Id], null, null)));
+}
+
+// An insurer's own covered parcels, a season of scenes, and one event window (a frost) with scenes before and after it.
+async Task SeedInsuranceDataAsync(TenantScope scope)
+{
+    var farms = S<FarmService>();
+    var farm = await farms.CreateFarmAsync(scope, "seed", new NewFarm("Covered Estate", Governorate: "Gharbia"));
+    var store = S<KernelStore>();
+    var ids = new List<string>();
+    for (var i = 1; i <= 5; i++)
+    {
+        var parcel = await farms.CreateParcelAsync(scope, "seed", new NewParcel(farm.Id, $"C-0{i}", ExternalId: $"C-0{i}"));
+        await S<BoundaryService>().AddAsync(scope, "seed", parcel.Id, SquareOf(120 + i * 10), new BoundaryProvenance("survey", "dev seed", new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc), 1));
+        await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(parcel.Id, "2026-27", "wheat", 4.0 + i, "2026-10-01", "contract"));
+        ids.Add(parcel.Id);
+
+        // Scenes before (Jan 5) and after (Jan 17) the window, except: C-04 has no clear scene after, C-05 has none at all.
+        async Task Scene(string id, DateTime when, double ndvi) => await store.ParcelObservations.InsertAsync(scope, new ParcelObservation
+        {
+            ParcelId = parcel.Id, BoundaryId = parcel.CurrentBoundaryId ?? string.Empty, SceneId = id, SensingTime = when, Readable = true, FullPixels = 240, UsablePixels = 240, NdviMedian = ndvi, NdviMean = ndvi,
+            PixelStackSha256 = new string('C', 64), SceneItemSha256 = new string('D', 64), PixelMethodId = "pixel-test", MethodId = "ZR3I-R0-2026-01", MethodVersion = 1, MethodState = "draft", Reader = "dev seed",
+            Attribution = "Contains modified Copernicus Sentinel data 2027",
+        });
+        if (i <= 4) await Scene("S2B_36RTV_20270105", new DateTime(2027, 1, 5, 8, 50, 0, DateTimeKind.Utc), 0.70 - i * 0.01);
+        if (i <= 3) await Scene("S2B_36RTV_20270117", new DateTime(2027, 1, 17, 8, 50, 0, DateTimeKind.Utc), i == 1 ? 0.52 : 0.68 - i * 0.01);
+    }
+
+    await S<EventWindowService>().CreateAsync(scope, "seed", new EventWindowRequest("Frost 10-14 Jan", "2026-27", "2027-01-10", "2027-01-14", new ParcelSelection([farm.Id], null, null)));
+}
+
+PolygonInput SquareOf(double side)
+{
+    var corners = new[] { (303800.0, 3409200.0), (303800 + side, 3409200.0), (303800 + side, 3409200 + side), (303800.0, 3409200 + side), (303800.0, 3409200.0) };
+    return PolygonInput.FromExterior(corners.Select(c => { var (lon, lat) = Epsg32636.ToLonLat(c.Item1, c.Item2); return new LonLat(lon, lat); }));
 }
