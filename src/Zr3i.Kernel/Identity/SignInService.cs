@@ -32,7 +32,8 @@ public sealed class SignInService(KernelStore store, PasswordHasher hasher, Audi
             return null;
         }
 
-        if (!user.IsActive || (user.LockedUntil is { } until && until > now))
+        // A person whose authenticator was reset gets the same answer as a wrong password until they have re-enrolled.
+        if (!user.IsActive || user.NeedsAuthenticator || (user.LockedUntil is { } until && until > now))
         {
             hasher.Verify(password ?? string.Empty, _decoyHash);
             await Deny(user.Id, "signin.password", user.Id, ct);
@@ -66,7 +67,7 @@ public sealed class SignInService(KernelStore store, PasswordHasher hasher, Audi
             return null;
 
         var user = await store.Users.GetAsync(PlatformTenant.Scope, challenge.UserId, ct);
-        if (user is null || !user.IsActive || (user.LockedUntil is { } until && until > now))
+        if (user is null || !user.IsActive || user.NeedsAuthenticator || (user.LockedUntil is { } until && until > now))
         {
             await Deny(user?.Id, "signin.totp", challenge.UserId, ct);
             return null;

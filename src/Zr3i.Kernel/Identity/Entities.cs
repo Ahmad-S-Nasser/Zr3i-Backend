@@ -31,6 +31,14 @@ public sealed class User : ITenantEntity
     public int FailedAttempts { get; set; }
     public DateTime? LockedUntil { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Set when an organisation admin has reset this person's authenticator. They cannot sign in until they re-enrol with the one-time
+    /// link (its hash and expiry are kept here, never the link itself).
+    /// </summary>
+    public bool NeedsAuthenticator { get; set; }
+    public string? ResetTokenHash { get; set; }
+    public DateTime? ResetExpiresAt { get; set; }
 }
 
 /// <summary>A user's place in one organisation. Empty PortfolioIds and FarmIds mean no scope limit.</summary>

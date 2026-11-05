@@ -24,7 +24,7 @@ public sealed class MemberDirectoryService(KernelStore store, TimeProvider clock
         var members = memberships.Where(m => users.ContainsKey(m.UserId)).Select(m =>
         {
             var u = users[m.UserId];
-            return new MemberView(u.Id, u.Email, u.Language, u.IsActive && m.IsActive, !string.IsNullOrEmpty(u.TotpSecret), u.LockedUntil,
+            return new MemberView(u.Id, u.Email, u.Language, u.IsActive && m.IsActive, !string.IsNullOrEmpty(u.TotpSecret) && !u.NeedsAuthenticator, u.LockedUntil,
                 [.. m.RoleIds.Where(byId.ContainsKey).Select(id => byId[id]).OrderBy(r => r.Key, StringComparer.Ordinal)], m.FarmIds.Count, m.PortfolioIds.Count);
         }).OrderBy(m => m.Email, StringComparer.Ordinal).ToList();
 
