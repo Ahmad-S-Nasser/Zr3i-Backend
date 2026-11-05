@@ -46,6 +46,10 @@ public static class WebApp
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.AccuracyRegister>();
         builder.Services.AddSingleton<FarmListService>();
         builder.Services.AddSingleton<ParcelListService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Admin.MemberDirectoryService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Admin.AuditReader>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Admin.TenantDirectoryService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Admin.PortfolioService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Indicators.IndicatorRecorder>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.CriService>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.FriService>();
@@ -129,6 +133,7 @@ public static class WebApp
         app.MapRiskEndpoints();
         app.MapFarmEndpoints();
         app.MapParcelEndpoints();
+        app.MapAdminReadEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();
 

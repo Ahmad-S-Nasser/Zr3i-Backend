@@ -17,14 +17,15 @@ public sealed class FarmListService(KernelStore store)
     public const int MaxPageSize = 200;
 
     /// <exception cref="ValidationFailedException">invalid_page_size, invalid_season.</exception>
-    public async Task<FarmList> ListAsync(TenantScope scope, string? cursor, int? pageSize, string? season, CancellationToken ct = default)
+    public async Task<FarmList> ListAsync(TenantScope scope, string? cursor, int? pageSize, string? season, CancellationToken ct = default, string? governorate = null)
     {
         var size = pageSize ?? DefaultPageSize;
         if (size is < 1 or > MaxPageSize) throw new ValidationFailedException("invalid_page_size");
         var s = string.IsNullOrWhiteSpace(season) ? null : season.Trim();
         if (s is not null && !FarmRules.IsValidSeason(s)) throw new ValidationFailedException("invalid_season");
 
-        var page = await store.Farms.FindPageAsync(scope, _ => true, cursor, size, ct);
+        var region = string.IsNullOrWhiteSpace(governorate) ? null : governorate.Trim();
+        var page = await store.Farms.FindPageAsync(scope, f => region == null || f.Governorate == region, cursor, size, ct);
         var farmIds = page.Items.Select(f => f.Id).ToList();
 
         var parcels = await AllAsync((c, n) => store.Parcels.FindPageAsync(scope, p => farmIds.Contains(p.FarmId), c, n, ct));

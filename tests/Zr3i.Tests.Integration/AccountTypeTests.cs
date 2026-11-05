@@ -21,7 +21,7 @@ public class AccountTypeTests(MongoFixture mongo)
         Assert.Equal(["bank", "company", "farmer", "insurance", "zr3i-admin"], all.Select(t => t.Key).Order());
         var company = all.Single(t => t.Key == "company");
         Assert.Equal("portfolio", company.HomeView);
-        Assert.Equal(["portfolio", "farms", "farmers", "risk", "imports", "methodology"], company.Navigation);
+        Assert.Equal(["portfolio", "farms", "farmers", "risk", "imports", "methodology", "users", "audit"], company.Navigation);
         Assert.Equal(["my-farms", "consent", "reports"], all.Single(t => t.Key == "farmer").Navigation);
         Assert.Equal(PlatformTenant.Id, company.TenantId);
         Assert.All(all, t => { Assert.NotEmpty(t.LabelEn); Assert.NotEmpty(t.LabelAr); Assert.Contains("org-admin", t.RoleKeys); });

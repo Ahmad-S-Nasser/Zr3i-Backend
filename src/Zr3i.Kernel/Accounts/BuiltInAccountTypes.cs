@@ -55,25 +55,25 @@ public static class BuiltInAccountTypes
         {
             Key = "zr3i-admin", LabelEn = "Zr3i admin", LabelAr = "إدارة Zr3i", Model = "provider", SelfSignup = false,
             RoleKeys = ["org-admin", "analyst"], Modules = ["verification", "risk"],
-            HomeView = "tenants", Navigation = ["tenants", "account-types", "methods"], SignupFields = [],
+            HomeView = "tenants", Navigation = ["tenants", "access-requests", "account-types", "methods", "users", "audit"], SignupFields = [],
         },
         new()
         {
             Key = "bank", LabelEn = "Bank", LabelAr = "بنك", Model = "b2b_lender",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "tranche-check", Navigation = ["tranches", "reports"], SignupFields = [CommercialRegister],
+            HomeView = "tranche-check", Navigation = ["tranches", "reports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "insurance", LabelEn = "Insurance", LabelAr = "تأمين", Model = "b2b_insurer",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "risk", "methodology"], SignupFields = [CommercialRegister],
+            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "risk", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "company", LabelEn = "Company", LabelAr = "شركة", Model = "b2b",
             RoleKeys = ["org-admin", "analyst", "viewer", "field-user"], Modules = ["verification", "risk"],
-            HomeView = "portfolio", Navigation = ["portfolio", "farms", "farmers", "risk", "imports", "methodology"], SignupFields = [CommercialRegister],
+            HomeView = "portfolio", Navigation = ["portfolio", "farms", "farmers", "risk", "imports", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {

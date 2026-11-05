@@ -10,10 +10,10 @@ public static class FarmEndpoints
     public const string Read = "portfolio:farms:read";
 
     public static void MapFarmEndpoints(this IEndpointRouteBuilder app) =>
-        app.MapGet("/api/organisations/{tenantId}/farms", async (string tenantId, string? cursor, int? pageSize, string? season, HttpContext http, Guard guard, FarmListService farms, CancellationToken ct) =>
+        app.MapGet("/api/organisations/{tenantId}/farms", async (string tenantId, string? cursor, int? pageSize, string? season, string? governorate, HttpContext http, Guard guard, FarmListService farms, CancellationToken ct) =>
             await guard.RunAsync(http, tenantId, Read, ct, async () =>
             {
-                var list = await farms.ListAsync(TenantScope.ForTenant(tenantId), cursor, pageSize, season, ct);
+                var list = await farms.ListAsync(TenantScope.ForTenant(tenantId), cursor, pageSize, season, ct, governorate);
                 return Results.Ok(new
                 {
                     season = list.Season, nextCursor = list.NextCursor,
