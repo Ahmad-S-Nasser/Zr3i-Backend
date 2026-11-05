@@ -73,7 +73,7 @@ public static class BuiltInAccountTypes
         {
             Key = "company", LabelEn = "Company", LabelAr = "شركة", Model = "b2b",
             RoleKeys = ["org-admin", "analyst", "viewer", "field-user"], Modules = ["verification", "risk"],
-            HomeView = "portfolio", Navigation = ["portfolio", "farms", "farmers", "risk", "imports", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "portfolio", Navigation = ["portfolio", "farms", "parcels", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
