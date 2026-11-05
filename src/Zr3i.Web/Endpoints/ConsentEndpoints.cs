@@ -48,8 +48,16 @@ public static class ConsentEndpoints
                 return Results.Created((string?)null, new { id = request.Id, consentToken = token, expiresAt = request.ExpiresAt });
             }));
 
-        org.MapGet("consents", async (string tenantId, HttpContext http, Guard guard, ConsentService consent, CancellationToken ct) =>
-            await guard.RunAsync(http, tenantId, ConsentsRead, ct, async () => Results.Ok((await consent.ListAsync(TenantScope.ForTenant(tenantId), ct)).Select(GrantDto))));
+        // Each grant names both organisations, so a farmer can see who may read their data.
+        org.MapGet("consents", async (string tenantId, HttpContext http, Guard guard, ConsentService consent, KernelStore store, CancellationToken ct) =>
+            await guard.RunAsync(http, tenantId, ConsentsRead, ct, async () =>
+            {
+                var grants = await consent.ListAsync(TenantScope.ForTenant(tenantId), ct);
+                var names = new Dictionary<string, string>();
+                foreach (var id in grants.SelectMany(g => new[] { g.OwnerTenantId, g.GranteeTenantId }).Where(id => !string.IsNullOrEmpty(id)).Distinct())
+                    names[id] = (await store.Organisations.GetAsync(TenantScope.ForTenant(id), id, ct))?.Name ?? string.Empty;
+                return Results.Ok(grants.Select(g => GrantDto(g, names)));
+            }));
 
         org.MapPost("consents", async (string tenantId, GrantBody b, HttpContext http, Guard guard, ConsentService consent, CancellationToken ct) =>
             await guard.RunAsync(http, tenantId, ConsentsManage, ct, async () =>
@@ -139,8 +147,9 @@ public static class ConsentEndpoints
 
     private static object FarmerDto(Farmer f) => new { id = f.Id, name = f.Name, phone = f.Phone, language = f.Language, externalId = f.ExternalId, accountOrganisationId = f.AccountOrganisationId };
 
-    private static object GrantDto(GrantView g) => new
+    private static object GrantDto(GrantView g, IReadOnlyDictionary<string, string>? names = null) => new
     {
+        ownerName = names?.GetValueOrDefault(g.OwnerTenantId), granteeName = names?.GetValueOrDefault(g.GranteeTenantId),
         grantId = g.GrantId, role = g.Role, status = g.Status, farmerId = g.FarmerId, granteeTenantId = g.GranteeTenantId, purpose = g.Purpose,
         parcelIds = g.ParcelIds, validFrom = g.ValidFrom, validUntil = g.ValidUntil, grantedAt = g.GrantedAt, withdrawnAt = g.WithdrawnAt, channel = g.Channel,
     };

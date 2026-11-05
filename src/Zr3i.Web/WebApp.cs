@@ -45,6 +45,7 @@ public static class WebApp
         builder.Services.AddSingleton<SceneCatalog>();
         builder.Services.AddSingleton<Zr3i.Kernel.Findings.AccuracyRegister>();
         builder.Services.AddSingleton<FarmListService>();
+        builder.Services.AddSingleton<ParcelListService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Indicators.IndicatorRecorder>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.CriService>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.FriService>();
@@ -127,6 +128,7 @@ public static class WebApp
         app.MapAccuracyEndpoints();
         app.MapRiskEndpoints();
         app.MapFarmEndpoints();
+        app.MapParcelEndpoints();
         app.MapImageryEndpoints();
         app.MapMeEndpoints();
 
