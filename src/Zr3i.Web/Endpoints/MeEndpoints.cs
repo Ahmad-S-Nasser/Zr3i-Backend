@@ -28,6 +28,7 @@ public static class MeEndpoints
                     id = org.Id,
                     name = org.Name,
                     accountType = org.AccountType,
+                    isSynthetic = org.IsSynthetic,
 
                     // The account type's preset (data, not code): what this organisation sees and where it lands. Keys are stable ids the frontend maps to screens.
                     accountTypeLabelEn = preset?.LabelEn, accountTypeLabelAr = preset?.LabelAr, homeView = preset?.HomeView,

@@ -11,6 +11,9 @@ public sealed class Organisation : ITenantEntity
     public string AccountType { get; set; } = string.Empty;
     public List<string> Modules { get; set; } = [];
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>A synthetic namespace holds illustrative data and no client data. Screens and reports say so on every page.</summary>
+    public bool IsSynthetic { get; set; }
 }
 
 /// <summary>

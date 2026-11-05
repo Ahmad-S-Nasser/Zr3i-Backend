@@ -77,6 +77,9 @@ foreach (var type in BuiltInAccountTypes.All)
         scope = TenantScope.ForTenant(org.Id);
     }
 
+    // Everything the seed makes is illustrative.
+    await S<OrganisationService>().SetSyntheticAsync(orgId, true);
+
     if (type.Key == "company") companyOrgId = orgId;
     if (type.Key == "farmer") farmerOrgId = orgId;
     if (type.Key == "bank") bankOrgId = orgId;

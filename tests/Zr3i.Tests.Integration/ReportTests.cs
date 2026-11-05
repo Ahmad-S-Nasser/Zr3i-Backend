@@ -297,4 +297,35 @@ public class ReportTests
         Assert.Contains("report.frozen", actions);
         Assert.Contains("report.downloaded", actions);
     }
+
+    [Fact]
+    public async Task AReportFromASyntheticNamespaceCarriesTheBannerAndAnOrdinaryOneDoesNot()
+    {
+        await using var web = await WebHarness.StartAsync();
+        var (bank, tranche, _) = await SeedBankAsync(web);
+        var other = await SeedBankAsync(web, "admin@plain-bank.example", "Plain Bank");
+        await web.Service<Zr3i.Kernel.Identity.OrganisationService>().SetSyntheticAsync(bank.OrgId, true);
+
+        var synthetic = await RequestAsync(web, bank, new { kind = "tranche", subjectId = tranche.Id });
+        await RunNewestFreezeJobAsync(web, bank.OrgId);
+        var plain = await RequestAsync(web, other.Bank, new { kind = "tranche", subjectId = other.Tranche.Id });
+        await RunNewestFreezeJobAsync(web, other.Bank.OrgId);
+
+        async Task<string> Page(Party who, string id, string name) => await (await Get(web, $"/api/organisations/{who.OrgId}/reports/{id}/files/{name}", who.Token)).Content.ReadAsStringAsync();
+        Assert.Contains("Synthetic namespace · Illustrative · No client data", await Page(bank, synthetic, "report.en.html"));
+        Assert.Contains("مساحة بيانات تجريبية", await Page(bank, synthetic, "report.ar.html"));
+        Assert.DoesNotContain("Synthetic namespace", await Page(other.Bank, plain, "report.en.html"));
+    }
+
+    [Fact]
+    public async Task MeStatesWhetherTheOrganisationIsSynthetic()
+    {
+        await using var web = await WebHarness.StartAsync();
+        var (bank, _, _) = await SeedBankAsync(web);
+        async Task<bool> Flag() => (await Json(await Get(web, "/api/me", bank.Token))).GetProperty("organisations")[0].GetProperty("isSynthetic").GetBoolean();
+
+        Assert.False(await Flag());
+        await web.Service<Zr3i.Kernel.Identity.OrganisationService>().SetSyntheticAsync(bank.OrgId, true);
+        Assert.True(await Flag());
+    }
 }

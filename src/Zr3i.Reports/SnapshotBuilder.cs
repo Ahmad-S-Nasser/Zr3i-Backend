@@ -23,13 +23,16 @@ public sealed class SnapshotBuilder(KernelStore store, TrancheService tranches, 
     {
         var org = (await store.Organisations.FindAsync(scope, o => o.Id == scope.TenantId, 1, ct)).FirstOrDefault();
         var name = org?.Name ?? string.Empty;
-        return p.Kind switch
+        var snapshot = p.Kind switch
         {
             ReportKinds.Tranche => await TrancheAsync(scope, name, p, ct),
             ReportKinds.FarmRisk => await FarmRiskAsync(scope, name, p, ct),
             ReportKinds.FarmerResults => await FarmerResultsAsync(scope, name, p, ct),
             _ => throw new ValidationFailedException("unknown_kind"),
         };
+
+        // A synthetic namespace gets the banner and watermark on every page of every report.
+        return snapshot with { Synthetic = org?.IsSynthetic ?? false };
     }
 
     private async Task<ReportSnapshot> TrancheAsync(TenantScope scope, string org, ReportJobPayload p, CancellationToken ct)

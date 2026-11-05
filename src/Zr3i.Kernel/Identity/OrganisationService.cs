@@ -16,6 +16,16 @@ public sealed class OrganisationService(KernelStore store, AccountTypeService ac
         return await CreateFromPresetAsync(Guid.NewGuid().ToString("N"), name, preset, ct);
     }
 
+    /// <summary>Marks an organisation as a synthetic namespace (or clears the mark).</summary>
+    /// <exception cref="NotFoundException">organisation.</exception>
+    public async Task SetSyntheticAsync(string organisationId, bool synthetic, CancellationToken ct = default)
+    {
+        var scope = TenantScope.ForTenant(organisationId);
+        var org = await store.Organisations.GetAsync(scope, organisationId, ct) ?? throw new NotFoundException("organisation", organisationId);
+        org.IsSynthetic = synthetic;
+        await store.Organisations.ReplaceAsync(scope, org, ct);
+    }
+
     /// <summary>The Zr3i provider organisation. It owns the reserved platform tenant, so its staff can manage platform-level things such as access requests.</summary>
     public async Task<Organisation> EnsureProviderAsync(CancellationToken ct = default)
     {
