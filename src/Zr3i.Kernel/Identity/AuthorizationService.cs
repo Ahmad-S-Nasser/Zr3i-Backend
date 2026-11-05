@@ -3,7 +3,10 @@ using Zr3i.Data;
 namespace Zr3i.Kernel.Identity;
 
 /// <summary>What a user may do in one organisation. Empty scope lists mean the membership is not limited.</summary>
-public sealed record Access(IReadOnlyList<string> Permissions, IReadOnlyList<string> PortfolioIds, IReadOnlyList<string> FarmIds)
+/// <summary>A role the user holds in an organisation.</summary>
+public sealed record RoleRef(string Key, string Name);
+
+public sealed record Access(IReadOnlyList<string> Permissions, IReadOnlyList<string> PortfolioIds, IReadOnlyList<string> FarmIds, IReadOnlyList<RoleRef>? Roles = null)
 {
     public bool Allows(string required) => Permissions.Any(p => Permission.Matches(p, required));
 }
@@ -28,7 +31,8 @@ public sealed class AuthorizationService(KernelStore store)
         return new Access(
             [.. roles.SelectMany(r => r.Permissions).Distinct()],
             [.. memberships.SelectMany(m => m.PortfolioIds).Distinct()],
-            [.. memberships.SelectMany(m => m.FarmIds).Distinct()]);
+            [.. memberships.SelectMany(m => m.FarmIds).Distinct()],
+            [.. roles.OrderBy(r => r.Key, StringComparer.Ordinal).Select(r => new RoleRef(r.Key, r.Name))]);
     }
 
     public async Task<bool> IsAllowedAsync(string userId, string tenantId, string permission, CancellationToken ct = default) =>
