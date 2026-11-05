@@ -8,6 +8,7 @@ using Zr3i.Kernel.Accounts;
 using Zr3i.Kernel.Consent;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Findings;
+using Zr3i.Kernel.Imagery;
 using Zr3i.Kernel.Identity;
 using Zr3i.Kernel.Indicators;
 using Zr3i.Modules.Risk;
@@ -130,7 +131,40 @@ async Task SeedCompanyDataAsync(TenantScope scope)
         var corners = new[] { (303800.0, 3409200.0), (303800 + side, 3409200.0), (303800 + side, 3409200 + side), (303800.0, 3409200 + side), (303800.0, 3409200.0) };
         var ring = corners.Select(c => { var (lon, lat) = Epsg32636.ToLonLat(c.Item1, c.Item2); return new LonLat(lon, lat); });
         await S<BoundaryService>().AddAsync(scope, "seed", parcel.Id, PolygonInput.FromExterior(ring), new BoundaryProvenance("survey", "dev seed", captured, 1));
-        var season = await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(parcel.Id, "2026-27", crop, area, "2026-10-01", "contract"));
+        // One verdict of each kind for the Verification screens. The flagged parcel declares more than the boundary measures.
+        var (declaredFactor, verdict, reason) = label switch
+        {
+            "ZR-KS-03" => (1.30, "FLAGGED", (string?)null),
+            "ZR-KS-05" => (1.00, "PENDING", null),
+            "ZR-KS-08" => (1.00, "NOT_ASSESSABLE", "insufficient_scenes"),
+            "ZR-KS-09" => (1.00, "NOT_ASSESSABLE", "below_resolution"),
+            _ => (1.00, "MEASURED", null),
+        };
+        var declared = Math.Round(area * declaredFactor, 1);
+        var season = await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(parcel.Id, "2026-27", crop, declared, "2026-10-01", "contract"));
+        var gap = Math.Round(100 * Math.Abs(area - declared) / declared, 1);
+        await S<KernelStore>().Findings.InsertAsync(scope, new Finding
+        {
+            ParcelId = parcel.Id, ParcelSeasonId = season.Id, Season = "2026-27", Slot = FindingSlots.Area, Type = reason == null ? "area_gap" : "not_assessable", Status = verdict, Reason = reason,
+            MeasuredFeddan = area, GapFeddan = area - declared, GapPercent = reason == null ? gap : null, NoisePercent = reason == null ? 5.3 : null, Direction = reason != null ? null : gap > 5.3 ? "OverDeclared" : "WithinNoise",
+            DeclaredAreaFeddan = declared, DeclaredCrop = crop, BoundaryId = parcel.CurrentBoundaryId ?? string.Empty, BoundaryGeometrySha256 = new string('A', 64), MethodId = "ZR3I-R0-2026-01", MethodVersion = 1, MethodState = "draft",
+            ParametersSha256 = new string('B', 64), AccuracyRef = $"ZR3I-R0-2026-01/v1/area_gap/-/{(area < 40 ? "2-5" : "5-10")}", InputSha256 = Guid.NewGuid().ToString("N"), CreatedAt = DateTime.UtcNow, CreatedBy = "seed",
+        });
+
+        if (label is "ZR-KS-03" or "ZR-KS-04")
+        {
+            // A season of Sentinel-2 passes: one lost to cloud.
+            double[] ndvi = [0.12, 0.28, 0.55, 0.71, 0.74, 0.69];
+            for (var i = 0; i < ndvi.Length; i++)
+                await S<KernelStore>().ParcelObservations.InsertAsync(scope, new ParcelObservation
+                {
+                    ParcelId = parcel.Id, BoundaryId = parcel.CurrentBoundaryId ?? string.Empty, SceneId = $"S2B_36RTV_{20261015 + i * 25}", SensingTime = new DateTime(2026, 10, 15, 8, 50, 0, DateTimeKind.Utc).AddDays(i * 25),
+                    FullPixels = 240, UsablePixels = i == 3 && label == "ZR-KS-03" ? 30 : 240, LostPixels = i == 3 && label == "ZR-KS-03" ? 210 : 0, LostShare = i == 3 && label == "ZR-KS-03" ? 0.875 : 0.0,
+                    Readable = !(i == 3 && label == "ZR-KS-03"), NdviMedian = i == 3 && label == "ZR-KS-03" ? null : ndvi[i], NdviMean = ndvi[i], NdviMin = ndvi[i] - 0.1, NdviMax = ndvi[i] + 0.1, NdviPixels = 240,
+                    PixelStackSha256 = new string('C', 64), SceneItemSha256 = new string('D', 64), PixelMethodId = "pixel-test", MethodId = "ZR3I-R0-2026-01", MethodVersion = 1, MethodState = "draft",
+                    Reader = "dev seed", Attribution = "Contains modified Copernicus Sentinel data 2026",
+                });
+        }
 
         if (label == "ZR-KS-03")
         {
