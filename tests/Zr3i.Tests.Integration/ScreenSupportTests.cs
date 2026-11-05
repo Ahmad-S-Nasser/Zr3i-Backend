@@ -55,15 +55,17 @@ public class ScreenSupportTests
         var farms = web.Service<FarmService>();
         var farm = await farms.CreateFarmAsync(scope, "seed", new NewFarm("F-0404"));
 
-        async Task<(Parcel, ParcelSeason)> Make(string label, double? side, double declared)
+        async Task<(Parcel, ParcelSeason)> Make(string label, double? side, double declared, bool priorSeasonFirst = false)
         {
             var p = await farms.CreateParcelAsync(scope, "seed", new NewParcel(farm.Id, label));
             if (side is not null) await web.Service<BoundaryService>().AddAsync(scope, "seed", p.Id, KernelHarness.SquareMetres(side.Value), new BoundaryProvenance("survey", "s", Captured, 1));
+            // A declaration for another season, made first, must not leak into this season's row.
+            if (priorSeasonFirst) await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(p.Id, "2025-26", "maize", 99.0, "2025-10-01", "contract"));
             return (p, await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(p.Id, Season, "wheat", declared, "2026-10-01", "contract")));
         }
 
         var (flagged, flaggedSeason) = await Make("P-0001", 150, 10.0);
-        var (matches, matchesSeason) = await Make("P-0002", 150, 5.4);
+        var (matches, matchesSeason) = await Make("P-0002", 150, 5.4, priorSeasonFirst: true);
         var (bare, _) = await Make("P-0003", null, 3.0);
 
         async Task Finding(Parcel p, ParcelSeason ps, string status, double gapPercent, string? supersedes = null, int hoursAhead = 0) =>
@@ -76,9 +78,6 @@ public class ScreenSupportTests
         var older = (await web.Service<KernelStore>().Findings.FindAsync(scope, f => f.ParcelId == flagged.Id)).Single();
         await Finding(flagged, flaggedSeason, "FLAGGED", 46.4, supersedes: older.Id);
         await Finding(matches, matchesSeason, "MEASURED", 0.2);
-
-        // A declaration for another season must not leak into this season's row.
-        await farms.DeclareSeasonAsync(scope, "seed", new NewParcelSeason(matches.Id, "2025-26", "maize", 99.0, "2025-10-01", "contract"));
 
         var url = $"/api/organisations/{org.OrgId}/parcels?season={Season}";
         Assert.Equal(HttpStatusCode.Unauthorized, (await web.Http.GetAsync(url)).StatusCode);
