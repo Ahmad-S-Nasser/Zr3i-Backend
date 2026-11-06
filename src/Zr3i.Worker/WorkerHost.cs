@@ -59,10 +59,14 @@ internal static class JobHandlers
         services.AddSingleton<SceneCatalog>();
         services.AddSingleton<IJobHandler, DiscoverHandler>();
 
+        // Pictures for a parcel and a scene: where the files go, and the handler that draws them.
+        services.AddSingleton<Zr3i.Kernel.Chips.IChipStore>(sp => new Zr3i.Kernel.Chips.FileChipStore(Zr3i.Kernel.Chips.ChipRoot.From(sp.GetRequiredService<IConfiguration>()["Imagery:ChipRoot"])));
+
         // Reading scenes for parcels: GDAL (bundled), the method registry for provenance, and the ingest handler.
         services.AddSingleton<IBandReader>(_ => new GdalBandReader());
         services.AddSingleton<Zr3i.Kernel.Methods.MethodRegistry>();
         services.AddSingleton<IJobHandler, IngestHandler>();
+        services.AddSingleton<IJobHandler, ChipHandler>();
 
         // Notifications: handlers tell the person when their report or import is done.
         services.AddSingleton<Zr3i.Kernel.Identity.AuthorizationService>();

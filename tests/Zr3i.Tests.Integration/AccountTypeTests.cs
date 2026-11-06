@@ -21,8 +21,11 @@ public class AccountTypeTests(MongoFixture mongo)
         Assert.Equal(["bank", "company", "farmer", "insurance", "zr3i-admin"], all.Select(t => t.Key).Order());
         var company = all.Single(t => t.Key == "company");
         Assert.Equal("portfolio", company.HomeView);
-        Assert.Equal(["portfolio", "farms", "parcels", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "reports", "users", "audit"], company.Navigation);
+        Assert.Equal(["portfolio", "farms", "parcels", "satellite", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "reports", "users", "audit"], company.Navigation);
         Assert.Equal(["my-farms", "consent", "reports"], all.Single(t => t.Key == "farmer").Navigation);
+        Assert.Equal(["tranches", "satellite", "reports", "imports", "users", "audit"], all.Single(t => t.Key == "bank").Navigation);
+        Assert.Equal(["portfolio", "event-evidence", "satellite", "risk", "methodology", "imports", "users", "audit"], all.Single(t => t.Key == "insurance").Navigation);
+        Assert.Equal(["tenants", "access-requests", "satellite", "account-types", "methods", "users", "audit"], all.Single(t => t.Key == "zr3i-admin").Navigation);
         Assert.Equal(PlatformTenant.Id, company.TenantId);
         Assert.All(all, t => { Assert.NotEmpty(t.LabelEn); Assert.NotEmpty(t.LabelAr); Assert.Contains("org-admin", t.RoleKeys); });
     }

@@ -28,6 +28,10 @@ public sealed class AppendOnlyRepository<T>(IMongoCollection<T> collection) wher
     public Task<IReadOnlyList<T>> FindOrderedAsync(TenantScope scope, Expression<Func<T, bool>> predicate, Expression<Func<T, object?>> orderBy, bool descending = false, int limit = 100, CancellationToken ct = default) =>
         _rows.FindOrderedAsync(scope, predicate, orderBy, descending, limit, ct);
 
+    /// <summary>How many of this tenant's rows match. A read, so it belongs on an append-only collection.</summary>
+    public async Task<long> CountAsync(TenantScope scope, Expression<Func<T, bool>> predicate, CancellationToken ct = default) =>
+        await _rows.Collection.CountDocumentsAsync(_rows.ForTenant(scope, predicate), cancellationToken: ct).ConfigureAwait(false);
+
     public Task<Page<T>> FindPageAsync(TenantScope scope, Expression<Func<T, bool>> predicate, string? cursor, int pageSize, CancellationToken ct = default) =>
         _rows.FindPageAsync(scope, predicate, cursor, pageSize, ct);
 }

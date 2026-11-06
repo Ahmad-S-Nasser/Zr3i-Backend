@@ -21,7 +21,7 @@ public class AppendOnlyRepositoryTests(MongoFixture mongo)
             .Select(m => m.Name)
             .ToHashSet();
 
-        Assert.Equal(new HashSet<string> { "InsertAsync", "InsertManyAsync", "GetAsync", "FindAsync", "FindOrderedAsync", "FindPageAsync" }, verbs);
+        Assert.Equal(new HashSet<string> { "InsertAsync", "InsertManyAsync", "GetAsync", "FindAsync", "FindOrderedAsync", "FindPageAsync", "CountAsync" }, verbs);
     }
 
     [Fact]

@@ -55,25 +55,25 @@ public static class BuiltInAccountTypes
         {
             Key = "zr3i-admin", LabelEn = "Zr3i admin", LabelAr = "إدارة Zr3i", Model = "provider", SelfSignup = false,
             RoleKeys = ["org-admin", "analyst"], Modules = ["verification", "risk"],
-            HomeView = "tenants", Navigation = ["tenants", "access-requests", "account-types", "methods", "users", "audit"], SignupFields = [],
+            HomeView = "tenants", Navigation = ["tenants", "access-requests", "satellite", "account-types", "methods", "users", "audit"], SignupFields = [],
         },
         new()
         {
             Key = "bank", LabelEn = "Bank", LabelAr = "بنك", Model = "b2b_lender",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "tranche-check", Navigation = ["tranches", "reports", "imports", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "tranche-check", Navigation = ["tranches", "satellite", "reports", "imports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "insurance", LabelEn = "Insurance", LabelAr = "تأمين", Model = "b2b_insurer",
             RoleKeys = ["org-admin", "analyst", "viewer"], Modules = ["verification", "risk"],
-            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "risk", "methodology", "imports", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "event-evidence", Navigation = ["portfolio", "event-evidence", "satellite", "risk", "methodology", "imports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {
             Key = "company", LabelEn = "Company", LabelAr = "شركة", Model = "b2b",
             RoleKeys = ["org-admin", "analyst", "viewer", "field-user"], Modules = ["verification", "risk"],
-            HomeView = "portfolio", Navigation = ["portfolio", "farms", "parcels", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "reports", "users", "audit"], SignupFields = [CommercialRegister],
+            HomeView = "portfolio", Navigation = ["portfolio", "farms", "parcels", "satellite", "farmers", "risk", "analysis", "accuracy", "imports", "methodology", "reports", "users", "audit"], SignupFields = [CommercialRegister],
         },
         new()
         {

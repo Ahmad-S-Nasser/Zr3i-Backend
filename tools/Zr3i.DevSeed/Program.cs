@@ -22,6 +22,10 @@ using Zr3i.Web;
 //   dotnet run --project tools/Zr3i.DevSeed -- --out <ABSOLUTE path to Zr3i-Frontend/src/dev/devPersonas.json> [--mongo mongodb://localhost:27017] [--db zr3i_dev]
 // (dotnet run resolves a relative path from the project folder, so use an absolute one.)
 //
+//   --live-check  adds ONE extra organisation, "Live Check Co" (not synthetic), with three real-coordinate parcels in the Nile delta, for trying the
+//                 satellite search and readings against the real catalogue. It leaves everything else in the database alone and appends one persona
+//                 (live:org-admin) to the --out file.
+//
 // Drop the database first for a clean reset (mongosh: db.getSiblingDB('zr3i_dev').dropDatabase()). Running twice adds a second set of organisations.
 
 const string DevPassword = "a long enough password";   // development only; the same constant the tests use
@@ -49,6 +53,8 @@ var app = WebApp.Build([], new Dictionary<string, string?>
 await app.StartAsync();
 using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
 T S<T>() where T : notnull => app.Services.GetRequiredService<T>();
+
+if (args.Contains("--live-check")) return await LiveCheckAsync();
 
 var orgNames = new Dictionary<string, string>
 {
@@ -112,6 +118,51 @@ File.WriteAllText(outPath, JsonSerializer.Serialize(new { password = DevPassword
 Console.WriteLine($"Seeded {personas.Count} accounts in '{database}'. Wrote {outPath}");
 await app.StopAsync();
 return 0;
+
+// One extra organisation for the real satellite check. Parcels are 150 m squares on the UTM 36N grid, in the Nile delta.
+async Task<int> LiveCheckAsync()
+{
+    var existing = File.Exists(outPath) ? JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(outPath)) : default;
+    var list = existing.ValueKind == JsonValueKind.Object ? existing.GetProperty("personas").EnumerateArray().Select(p => (object)p.Clone()).ToList() : [];
+    if (list.Any(p => ((JsonElement)p).GetProperty("id").GetString() == "live:org-admin"))
+    {
+        Console.WriteLine("Live Check Co is already in the personas file; nothing to do.");
+        await app.StopAsync();
+        return 0;
+    }
+
+    var org = await S<OrganisationService>().CreateAsync("Live Check Co", "company");
+    var scope = TenantScope.ForTenant(org.Id);
+    var type = BuiltInAccountTypes.All.Single(t => t.Key == "company");
+    var token = await S<InvitationService>().InviteAsync(scope, "system", "org-admin@live.example", ["org-admin"]);
+    var secret = Totp.NewSecret();
+    (await http.PostAsJsonAsync("/api/invitations/accept", new { token, password = DevPassword, language = "en", totpSecret = secret, totpCode = Totp.CodeAt(secret, DateTimeOffset.UtcNow) })).EnsureSuccessStatusCode();
+
+    var farms = S<FarmService>();
+    var farm = await farms.CreateFarmAsync(scope, "seed", new NewFarm("LIVE-01", Governorate: "Kafr El Sheikh"));
+    var captured = DateTime.UtcNow.Date;
+    var labels = new[] { "LIVE-01-A", "LIVE-01-B", "LIVE-01-C" };
+    for (var i = 0; i < labels.Length; i++)
+    {
+        var parcel = await farms.CreateParcelAsync(scope, "seed", new NewParcel(farm.Id, labels[i]));
+        var (x0, y0) = (306000.0 + i * 400, 3411000.0);
+        var corners = new[] { (x0, y0), (x0 + 150, y0), (x0 + 150, y0 + 150), (x0, y0 + 150), (x0, y0) };
+        var ring = corners.Select(c => { var (lon, lat) = Epsg32636.ToLonLat(c.Item1, c.Item2); return new LonLat(lon, lat); });
+        await S<BoundaryService>().AddAsync(scope, "seed", parcel.Id, PolygonInput.FromExterior(ring), new BoundaryProvenance("survey", "live check", captured, 1));
+    }
+
+    var role = RoleTemplates.All.Single(r => r.Key == "org-admin");
+    list.Add(new
+    {
+        id = "live:org-admin", accountType = "company", accountTypeLabel = type.LabelEn, orgId = org.Id, orgName = "Live Check Co",
+        role = "org-admin", roleName = role.Name, permissions = role.Permissions, modules = type.Modules, home = type.HomeView, navigation = type.Navigation, email = "org-admin@live.example", totpSecret = secret,
+    });
+    Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+    File.WriteAllText(outPath, JsonSerializer.Serialize(new { password = DevPassword, personas = list }, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+    Console.WriteLine($"Live Check Co created ({org.Id}) with {labels.Length} parcels. Appended live:org-admin to {outPath}");
+    await app.StopAsync();
+    return 0;
+}
 
 // Synthetic data for the Company organisation: the Delta Agro Estate farm of the methodology's worked example.
 async Task SeedCompanyDataAsync(TenantScope scope)
