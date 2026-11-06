@@ -75,6 +75,13 @@ internal sealed class TenantCollection<T>(IMongoCollection<T> collection) where 
             .Sort(Builders<T>.Sort.Ascending(IdField)).Limit(limit).ToListAsync(ct).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<T>> FindOrderedAsync(TenantScope scope, Expression<Func<T, bool>> predicate, Expression<Func<T, object?>> orderBy, bool descending, int limit, CancellationToken ct)
+    {
+        CheckLimit(limit);
+        var sort = descending ? Builders<T>.Sort.Descending(orderBy) : Builders<T>.Sort.Ascending(orderBy);
+        return await Collection.Find(ForTenant(scope, predicate)).Sort(sort).Limit(limit).ToListAsync(ct).ConfigureAwait(false);
+    }
+
     public async Task<Page<T>> FindPageAsync(TenantScope scope, Expression<Func<T, bool>> predicate, string? cursor, int pageSize, CancellationToken ct)
     {
         CheckLimit(pageSize);

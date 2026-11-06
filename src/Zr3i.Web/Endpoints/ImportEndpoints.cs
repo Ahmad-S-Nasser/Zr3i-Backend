@@ -110,6 +110,25 @@ public static class ImportEndpoints
 /// <summary>Runs a route body after the permission check and turns the Kernel's exceptions into stable error responses.</summary>
 public sealed class Guard(AuthorizationService authorization, AuditService audit)
 {
+    /// <summary>For routes that return only the caller's own data: any active member of the organisation may call, and the body gets their access.</summary>
+    public async Task<IResult> RunAsMemberAsync(HttpContext http, string tenantId, CancellationToken ct, Func<Access, Task<IResult>> body)
+    {
+        var access = await authorization.GetAccessAsync(http.User.UserId(), tenantId, ct);
+        if (access is null) return Results.Json(new { error = "forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+        try
+        {
+            return await body(access);
+        }
+        catch (ValidationFailedException e)
+        {
+            return Results.BadRequest(new { error = e.Codes[0], codes = e.Codes });
+        }
+        catch (NotFoundException)
+        {
+            return Results.Json(new { error = "not_found" }, statusCode: StatusCodes.Status404NotFound);
+        }
+    }
+
     public async Task<IResult> RunAsync(HttpContext http, string tenantId, string permission, CancellationToken ct, Func<Task<IResult>> body)
     {
         if (await TenantAccess.DenyUnlessAsync(http, tenantId, permission, authorization, audit, ct) is { } denied) return denied;

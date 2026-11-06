@@ -3,6 +3,7 @@ using Zr3i.Data;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Jobs;
+using Zr3i.Kernel.Notifications;
 
 namespace Zr3i.Kernel.Imports;
 
@@ -10,7 +11,7 @@ namespace Zr3i.Kernel.Imports;
 /// Reads the uploaded file, checks every row and stages the result so a person can see the report before committing.
 /// Safe to run again for the same batch: staged rows are replaced, never doubled.
 /// </summary>
-public sealed class ImportValidateHandler(KernelStore store, AuditService audit, TimeProvider clock) : IJobHandler
+public sealed class ImportValidateHandler(KernelStore store, AuditService audit, TimeProvider clock, NotificationService? notify = null) : IJobHandler
 {
     public const int MaxRows = 100_000;
     private const int InsertBatch = 1000;
@@ -85,6 +86,7 @@ public sealed class ImportValidateHandler(KernelStore store, AuditService audit,
         batch.ValidatedAt = clock.GetUtcNow().UtcDateTime;
         await store.ImportBatches.ReplaceAsync(scope, batch, ct);
         await audit.RecordAsync(scope, batch.CreatedBy, "import.validated", "import_batch", batch.Id, ct: ct);
+        if (notify is not null) await notify.NotifyAsync(scope, [batch.CreatedBy], NotificationCodes.ImportValidated, "import_batch", batch.Id, batch.FileName, ct);
         await context.ReportProgressAsync(total, total, ct);
 
         return JobOutcome.Success(JobJson.Serialize(new { batch.TotalRows, batch.ValidRows, batch.InvalidRows }));
@@ -137,6 +139,7 @@ public sealed class ImportValidateHandler(KernelStore store, AuditService audit,
         batch.Status = ImportStatus.Failed;
         await store.ImportBatches.ReplaceAsync(scope, batch, ct);
         await audit.RecordAsync(scope, batch.CreatedBy, "import.rejected", "import_batch", batch.Id, AuditService.Denied, ct: ct);
+        if (notify is not null) await notify.NotifyAsync(scope, [batch.CreatedBy], NotificationCodes.ImportRejected, "import_batch", batch.Id, batch.FileName, ct);
         return JobOutcome.Failure("bad_file", JobJson.Serialize(new { errors = batch.FileErrors }));
     }
 

@@ -1,6 +1,7 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Identity;
+using Zr3i.Kernel.Notifications;
 
 namespace Zr3i.Kernel.Consent;
 
@@ -33,7 +34,7 @@ public sealed record GrantView(
 /// own account, with a purpose and a period; the farmer can withdraw at any time and it takes effect on the next read. Every change
 /// is a new ledger line, written in the owner's tenant and mirrored to the other parties.
 /// </summary>
-public sealed class ConsentService(KernelStore store, AuditService audit, TimeProvider clock)
+public sealed class ConsentService(KernelStore store, AuditService audit, TimeProvider clock, NotificationService? notify = null)
 {
     public static readonly TimeSpan MaxPeriod = TimeSpan.FromDays(730);
     public static readonly TimeSpan MinPeriod = TimeSpan.FromDays(1);
@@ -62,6 +63,8 @@ public sealed class ConsentService(KernelStore store, AuditService audit, TimePr
         };
         await store.ConsentRequests.InsertAsync(owner, request, ct);
         await audit.RecordAsync(owner, actorUserId, "consent.requested", "consent_request", request.Id, purpose: clean.Purpose, ct: ct);
+        if (notify is not null && !string.IsNullOrWhiteSpace(farmer.AccountOrganisationId))
+            await notify.NotifyMembersAsync(TenantScope.ForTenant(farmer.AccountOrganisationId), NotificationCodes.ConsentRequested, "consent_request", request.Id, clean.Purpose, ct);
         return (request, $"{owner.TenantId}.{request.Id}.{secret}");
     }
 
@@ -91,6 +94,7 @@ public sealed class ConsentService(KernelStore store, AuditService audit, TimePr
             request.Status = ConsentRequestStatus.Declined;
             await store.ConsentRequests.ReplaceAsync(owner, request, ct);
             await audit.RecordAsync(owner, null, "consent.declined", "consent_request", request.Id, purpose: request.Purpose, ct: ct);
+            if (notify is not null) await notify.NotifyAsync(owner, [request.RequestedBy], NotificationCodes.ConsentDeclined, "consent_request", request.Id, request.Purpose, ct);
             return new ConsentResponse(false, null, null);
         }
 
@@ -103,6 +107,11 @@ public sealed class ConsentService(KernelStore store, AuditService audit, TimePr
         request.GrantId = grantId;
         await store.ConsentRequests.ReplaceAsync(owner, request, ct);
         await audit.RecordAsync(owner, null, "consent.granted", "consent_grant", grantId, purpose: request.Purpose, ct: ct);
+        if (notify is not null)
+        {
+            await notify.NotifyAsync(owner, [request.RequestedBy], NotificationCodes.ConsentGranted, "consent_grant", grantId, request.Purpose, ct);
+            await notify.NotifyAdminsAsync(TenantScope.ForTenant(request.GranteeTenantId), NotificationCodes.ConsentGranted, "consent_grant", grantId, request.Purpose, ct);
+        }
         return new ConsentResponse(true, grantId, $"{owner.TenantId}.{grantId}.{withdrawSecret}");
     }
 
@@ -118,6 +127,7 @@ public sealed class ConsentService(KernelStore store, AuditService audit, TimePr
         await WriteAsync(actorOrg, farmer, Template(actorOrg, farmer, terms with { Purpose = clean.Purpose, ParcelIds = clean.ParcelIds }, clean.ValidFrom, grantId,
             ConsentEventTypes.Granted, ConsentChannels.Account, actorUserId, farmer.Language, null), ct);
         await audit.RecordAsync(actorOrg, actorUserId, "consent.granted", "consent_grant", grantId, purpose: clean.Purpose, ct: ct);
+        if (notify is not null) await notify.NotifyAdminsAsync(TenantScope.ForTenant(clean.Grantee), NotificationCodes.ConsentGranted, "consent_grant", grantId, clean.Purpose, ct);
         return (await ListAsync(actorOrg, ct)).Single(g => g.GrantId == grantId);
     }
 
@@ -169,6 +179,11 @@ public sealed class ConsentService(KernelStore store, AuditService audit, TimePr
         var terms = new GrantTerms(g.FarmerId, g.GranteeTenantId, g.Purpose, g.ValidUntil, g.ParcelIds, g.ValidFrom);
         await WriteAsync(owner, farmer, Template(owner, farmer, terms, g.ValidFrom, grantId, ConsentEventTypes.Withdrawn, channel, actor, language, null), ct);
         await audit.RecordAsync(owner, actor, "consent.withdrawn", "consent_grant", grantId, purpose: g.Purpose, ct: ct);
+        if (notify is not null)
+        {
+            await notify.NotifyAdminsAsync(TenantScope.ForTenant(g.GranteeTenantId), NotificationCodes.ConsentWithdrawn, "consent_grant", grantId, g.Purpose, ct);
+            await notify.NotifyAdminsAsync(owner, NotificationCodes.ConsentWithdrawn, "consent_grant", grantId, g.Purpose, ct);
+        }
     }
 
     private ConsentEvent Template(TenantScope owner, Farmer farmer, GrantTerms terms, DateTime validFrom, string grantId, string type, string channel, string? actor, string language, string? withdrawHash) =>

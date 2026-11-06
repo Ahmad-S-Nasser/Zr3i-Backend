@@ -41,6 +41,7 @@ public sealed class KernelStore(DataStore data)
     public TenantRepository<Scene> Scenes { get; } = data.Tenant<Scene>(Collections.Scenes);
     public TenantRepository<Zr3i.Kernel.Programmes.Tranche> Tranches { get; } = data.Tenant<Zr3i.Kernel.Programmes.Tranche>(Collections.Tranches);
     public TenantRepository<Zr3i.Kernel.Programmes.EventWindow> EventWindows { get; } = data.Tenant<Zr3i.Kernel.Programmes.EventWindow>(Collections.EventWindows);
+    public TenantRepository<Zr3i.Kernel.Notifications.Notification> Notifications { get; } = data.Tenant<Zr3i.Kernel.Notifications.Notification>(Collections.Notifications);
     public AppendOnlyRepository<Zr3i.Kernel.Reports.FrozenReport> FrozenReports { get; } = data.AppendOnly<Zr3i.Kernel.Reports.FrozenReport>(Collections.FrozenReports);
     public AppendOnlyRepository<Zr3i.Kernel.Reports.ReportFile> ReportFiles { get; } = data.AppendOnly<Zr3i.Kernel.Reports.ReportFile>(Collections.ReportFiles);
     public AppendOnlyRepository<Zr3i.Kernel.Indicators.ReferenceDistribution> ReferenceDistributions { get; } = data.AppendOnly<Zr3i.Kernel.Indicators.ReferenceDistribution>(Collections.ReferenceDistributions);

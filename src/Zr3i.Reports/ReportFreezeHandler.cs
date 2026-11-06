@@ -3,6 +3,7 @@ using Zr3i.Data;
 using Zr3i.Kernel;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Jobs;
+using Zr3i.Kernel.Notifications;
 using Zr3i.Kernel.Reports;
 
 namespace Zr3i.Reports;
@@ -11,7 +12,7 @@ namespace Zr3i.Reports;
 /// Freezes a report: builds the snapshot, renders English and Arabic pages, the CSV and the PDFs, hashes every file, writes a manifest and stores it all.
 /// Safe to run twice for the same job: a report that already exists is left as it is, and files written by an interrupted run are reused.
 /// </summary>
-public sealed class ReportFreezeHandler(KernelStore store, SnapshotBuilder builder, IPdfRenderer pdf, AuditService audit, TimeProvider clock) : IJobHandler
+public sealed class ReportFreezeHandler(KernelStore store, SnapshotBuilder builder, IPdfRenderer pdf, AuditService audit, TimeProvider clock, NotificationService? notify = null) : IJobHandler
 {
     public string Type => ReportService.FreezeJobType;
 
@@ -23,8 +24,8 @@ public sealed class ReportFreezeHandler(KernelStore store, SnapshotBuilder build
 
         ReportSnapshot snapshot;
         try { snapshot = await builder.BuildAsync(scope, payload, ct); }
-        catch (NotFoundException) { return JobOutcome.Failure("subject_not_found"); }
-        catch (ValidationFailedException e) { return JobOutcome.Failure(e.Codes.FirstOrDefault() ?? "invalid_request"); }
+        catch (NotFoundException) { return await FailedAsync(scope, payload, "subject_not_found"); }
+        catch (ValidationFailedException e) { return await FailedAsync(scope, payload, e.Codes.FirstOrDefault() ?? "invalid_request"); }
 
         var json = snapshot.ToJson();
         var snapshotSha = snapshot.Sha256();
@@ -38,8 +39,13 @@ public sealed class ReportFreezeHandler(KernelStore store, SnapshotBuilder build
             pdfEn = await pdf.RenderAsync(Encoding.UTF8.GetString(htmlEn), created, ct);
             pdfAr = await pdf.RenderAsync(Encoding.UTF8.GetString(htmlAr), created, ct);
         }
-        catch (InvalidOperationException e) when (e.Message == "browser_not_configured") { return JobOutcome.Failure("browser_not_configured"); }
-        catch (Exception e) when (e is not OperationCanceledException) { return JobOutcome.RetryLater("pdf_unavailable"); }
+        catch (InvalidOperationException e) when (e.Message == "browser_not_configured") { return await FailedAsync(scope, payload, "browser_not_configured"); }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            // A retry is not a failure yet; the person is told only when the attempts run out.
+            if (context.Job.Attempts < context.Job.MaxAttempts) return JobOutcome.RetryLater("pdf_unavailable");
+            return await FailedAsync(scope, payload, "pdf_unavailable");
+        }
 
         var files = new List<ReportFile>
         {
@@ -80,7 +86,14 @@ public sealed class ReportFreezeHandler(KernelStore store, SnapshotBuilder build
         };
         await store.FrozenReports.InsertAsync(scope, report, ct);
         await audit.RecordAsync(scope, payload.RequestedBy, "report.frozen", "report", report.Id, purpose: snapshot.Kind, ct: ct);
+        if (notify is not null) await notify.NotifyAsync(scope, [payload.RequestedBy], NotificationCodes.ReportReady, "report", report.Id, snapshot.Kind, ct);
         return JobOutcome.Success(JobJson.Serialize(new { reportId = report.Id, snapshotSha256 = snapshotSha }));
+    }
+
+    private async Task<JobOutcome> FailedAsync(TenantScope scope, ReportJobPayload payload, string code)
+    {
+        if (notify is not null) await notify.NotifyAsync(scope, [payload.RequestedBy], NotificationCodes.ReportFailed, "report", payload.ReportId, payload.Kind);
+        return JobOutcome.Failure(code);
     }
 
     private static ReportFile File(string reportId, string name, string contentType, byte[] data) =>

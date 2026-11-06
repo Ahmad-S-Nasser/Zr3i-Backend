@@ -24,6 +24,10 @@ public sealed class TenantRepository<T>(IMongoCollection<T> collection) where T 
     public Task<IReadOnlyList<T>> FindAsync(TenantScope scope, Expression<Func<T, bool>> predicate, int limit = 1000, CancellationToken ct = default) =>
         _rows.FindAsync(scope, predicate, limit, ct);
 
+    /// <summary>Rows in the order of one field (for the newest N, or the first N by name). Still only this tenant's rows.</summary>
+    public Task<IReadOnlyList<T>> FindOrderedAsync(TenantScope scope, Expression<Func<T, bool>> predicate, Expression<Func<T, object?>> orderBy, bool descending = false, int limit = 100, CancellationToken ct = default) =>
+        _rows.FindOrderedAsync(scope, predicate, orderBy, descending, limit, ct);
+
     public Task<Page<T>> FindPageAsync(TenantScope scope, Expression<Func<T, bool>> predicate, string? cursor, int pageSize, CancellationToken ct = default) =>
         _rows.FindPageAsync(scope, predicate, cursor, pageSize, ct);
 

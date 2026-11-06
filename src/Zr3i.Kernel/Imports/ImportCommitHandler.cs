@@ -2,6 +2,7 @@ using Zr3i.Data;
 using Zr3i.Kernel.Audit;
 using Zr3i.Kernel.Farms;
 using Zr3i.Kernel.Jobs;
+using Zr3i.Kernel.Notifications;
 
 namespace Zr3i.Kernel.Imports;
 
@@ -10,7 +11,7 @@ namespace Zr3i.Kernel.Imports;
 /// page is done, so a job that is interrupted and run again carries on where it stopped and never applies a row twice. A row that
 /// cannot be applied is reported and skipped; it does not stop the others.
 /// </summary>
-public sealed class ImportCommitHandler(KernelStore store, AuditService audit, TimeProvider clock) : IJobHandler
+public sealed class ImportCommitHandler(KernelStore store, AuditService audit, TimeProvider clock, NotificationService? notify = null) : IJobHandler
 {
     private const int Page = 500;
 
@@ -52,6 +53,7 @@ public sealed class ImportCommitHandler(KernelStore store, AuditService audit, T
         batch.CommittedAt = clock.GetUtcNow().UtcDateTime;
         await store.ImportBatches.ReplaceAsync(scope, batch, ct);
         await audit.RecordAsync(scope, batch.CreatedBy, "import.committed", "import_batch", batch.Id, ct: ct);
+        if (notify is not null) await notify.NotifyAsync(scope, [batch.CreatedBy], NotificationCodes.ImportCommitted, "import_batch", batch.Id, batch.FileName, ct);
         await context.ReportProgressAsync(total, total, ct);
 
         return JobOutcome.Success(JobJson.Serialize(new { batch.Created, batch.Updated, batch.Unchanged, batch.Failed }));

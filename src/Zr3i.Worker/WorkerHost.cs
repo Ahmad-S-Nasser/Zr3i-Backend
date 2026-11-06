@@ -64,6 +64,10 @@ internal static class JobHandlers
         services.AddSingleton<Zr3i.Kernel.Methods.MethodRegistry>();
         services.AddSingleton<IJobHandler, IngestHandler>();
 
+        // Notifications: handlers tell the person when their report or import is done.
+        services.AddSingleton<Zr3i.Kernel.Identity.AuthorizationService>();
+        services.AddSingleton<Zr3i.Kernel.Notifications.NotificationService>();
+
         // Reports: the same read services the screens use, a browser for PDFs (the only place one is used), and the freeze handler.
         services.AddSingleton<Zr3i.Kernel.Farms.ParcelListService>();
         services.AddSingleton<Zr3i.Kernel.Programmes.TrancheService>();

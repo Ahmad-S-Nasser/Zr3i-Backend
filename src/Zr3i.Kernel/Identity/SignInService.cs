@@ -1,5 +1,6 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Notifications;
 
 namespace Zr3i.Kernel.Identity;
 
@@ -8,7 +9,7 @@ namespace Zr3i.Kernel.Identity;
 /// Every refusal returns null and looks the same to the caller, whatever the reason (unknown email, wrong password,
 /// locked, deactivated, wrong code). Five failures in a row lock the account for 15 minutes.
 /// </summary>
-public sealed class SignInService(KernelStore store, PasswordHasher hasher, AuditService audit, TimeProvider clock)
+public sealed class SignInService(KernelStore store, PasswordHasher hasher, AuditService audit, TimeProvider clock, NotificationService? notify = null)
 {
     public const int MaxFailures = 5;
     public static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(15);
@@ -113,7 +114,13 @@ public sealed class SignInService(KernelStore store, PasswordHasher hasher, Audi
         await Deny(user.Id, action, user.Id, ct);
 
         // The plan asks to email the user on a lock. Email sending is not built yet; this event is what it will read.
-        if (locked) await audit.RecordAsync(PlatformTenant.Scope, user.Id, "account.locked", "user", user.Id, AuditService.Denied, ct: ct);
+        if (locked)
+        {
+            await audit.RecordAsync(PlatformTenant.Scope, user.Id, "account.locked", "user", user.Id, AuditService.Denied, ct: ct);
+            if (notify is not null)
+                foreach (var organisationId in user.OrganisationIds)
+                    await notify.NotifyAdminsAsync(TenantScope.ForTenant(organisationId), NotificationCodes.AccountLocked, "user", user.Id, null, ct);
+        }
     }
 
     private Task Deny(string? actorUserId, string action, string objectId, CancellationToken ct) =>

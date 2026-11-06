@@ -68,7 +68,7 @@ public class ReportTests
     }
 
     private static ReportFreezeHandler Handler(WebHarness web, IPdfRenderer pdf) =>
-        new(web.Service<KernelStore>(), new SnapshotBuilder(web.Service<KernelStore>(), web.Service<TrancheService>(), web.Service<Zr3i.Modules.Risk.RiskService>(), TimeProvider.System), pdf, web.Service<AuditService>(), TimeProvider.System);
+        new(web.Service<KernelStore>(), new SnapshotBuilder(web.Service<KernelStore>(), web.Service<TrancheService>(), web.Service<Zr3i.Modules.Risk.RiskService>(), TimeProvider.System), pdf, web.Service<AuditService>(), TimeProvider.System, web.Service<Zr3i.Kernel.Notifications.NotificationService>());
 
     private static async Task<JobOutcome> RunNewestFreezeJobAsync(WebHarness web, string orgId, IPdfRenderer? pdf = null)
     {
@@ -327,5 +327,36 @@ public class ReportTests
         Assert.False(await Flag());
         await web.Service<Zr3i.Kernel.Identity.OrganisationService>().SetSyntheticAsync(bank.OrgId, true);
         Assert.True(await Flag());
+    }
+
+    private static async Task<string[]> InboxCodesAsync(WebHarness web, Party who) =>
+        [.. (await Json(await Get(web, $"/api/organisations/{who.OrgId}/notifications", who.Token))).GetProperty("items").EnumerateArray().Select(i => i.GetProperty("code").GetString()!)];
+
+    [Fact]
+    public async Task AFrozenReportTellsTheRequesterOnly()
+    {
+        await using var web = await WebHarness.StartAsync();
+        var (bank, tranche, _) = await SeedBankAsync(web);
+        var token = await web.Service<Zr3i.Kernel.Identity.InvitationService>().InviteAsync(TenantScope.ForTenant(bank.OrgId), "system", "viewer@nile-bank.example", ["viewer"]);
+        var viewer = new Party(bank.OrgId, await web.SignInAsync("viewer@nile-bank.example", await web.AcceptAsync(token)));
+        await RequestAsync(web, bank, new { kind = "tranche", subjectId = tranche.Id });
+
+        Assert.Empty(await InboxCodesAsync(web, bank));
+        await RunNewestFreezeJobAsync(web, bank.OrgId);
+
+        Assert.Equal(["report.ready"], await InboxCodesAsync(web, bank));
+        Assert.Empty(await InboxCodesAsync(web, viewer));
+    }
+
+    [Fact]
+    public async Task AReportThatCannotBeMadeTellsTheRequester()
+    {
+        await using var web = await WebHarness.StartAsync();
+        var (bank, tranche, _) = await SeedBankAsync(web);
+        await RequestAsync(web, bank, new { kind = "tranche", subjectId = tranche.Id });
+
+        await RunNewestFreezeJobAsync(web, bank.OrgId, new FakePdf(broken: true));
+
+        Assert.Equal(["report.failed"], await InboxCodesAsync(web, bank));
     }
 }

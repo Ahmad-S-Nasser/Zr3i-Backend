@@ -32,6 +32,7 @@ public static class Collections
     public const string Findings = "findings";
     public const string Tranches = "tranches";
     public const string EventWindows = "event_windows";
+    public const string Notifications = "notifications";
     public const string FrozenReports = "frozen_reports";
     public const string ReportFiles = "report_files";
     public const string IndicatorResults = "indicator_results";

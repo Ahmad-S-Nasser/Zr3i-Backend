@@ -1,5 +1,6 @@
 using Zr3i.Data;
 using Zr3i.Kernel.Audit;
+using Zr3i.Kernel.Notifications;
 
 namespace Zr3i.Kernel.Identity;
 
@@ -25,7 +26,7 @@ public sealed record AuthenticatorResetLink(string Token, DateTime ExpiresAt);
 /// sign in until they re-enrol with a one-time link, proving who they are with their password and a code from the new authenticator.
 /// Both steps are audited. The link is the credential, so only its hash is stored.
 /// </summary>
-public sealed class AuthenticatorResetService(KernelStore store, PasswordHasher hasher, AuditService audit, TimeProvider clock)
+public sealed class AuthenticatorResetService(KernelStore store, PasswordHasher hasher, AuditService audit, TimeProvider clock, NotificationService? notify = null)
 {
     public static readonly TimeSpan Lifetime = TimeSpan.FromHours(24);
 
@@ -89,6 +90,9 @@ public sealed class AuthenticatorResetService(KernelStore store, PasswordHasher 
         await store.Users.ReplaceAsync(PlatformTenant.Scope, user, ct);
 
         foreach (var organisationId in user.OrganisationIds)
+        {
             await audit.RecordAsync(TenantScope.ForTenant(organisationId), user.Id, "authenticator.reset_completed", "user", user.Id, ct: ct);
+            if (notify is not null) await notify.NotifyAdminsAsync(TenantScope.ForTenant(organisationId), NotificationCodes.AuthenticatorResetCompleted, "user", user.Id, null, ct);
+        }
     }
 }
