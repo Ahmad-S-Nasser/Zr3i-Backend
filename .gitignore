@@ -12,3 +12,6 @@ secrets.json
 *.pfx
 *.key
 docs/
+
+# Local picture files (development)
+data/
