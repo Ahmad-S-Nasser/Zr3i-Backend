@@ -106,6 +106,27 @@ public static class ImageryEndpoints
                 return Results.File(data, "image/png");
             })).RequireAuthorization();
 
+        // One scene with every parcel under it: the reading's numbers and which pictures exist. Listed by label, never ranked.
+        app.MapGet("/api/organisations/{tenantId}/imagery/scenes/{sceneId}", async (string tenantId, string sceneId, HttpContext http, Guard guard, ImagerySummaryService summary, CancellationToken ct) =>
+            await guard.RunAsync(http, tenantId, Read, ct, async () =>
+            {
+                var d = await summary.SceneDetailAsync(TenantScope.ForTenant(tenantId), sceneId, ct);
+                return Results.Ok(new
+                {
+                    scene = new
+                    {
+                        sceneId = d.Scene.SceneId, sensingTime = d.Scene.SensingTime, tile = d.Scene.Tile, platform = d.Scene.Platform, cloudCover = d.Scene.CloudCover,
+                        attribution = d.Scene.Attribution, processingBaseline = d.Scene.ProcessingBaseline, itemSha256 = d.Scene.ItemSha256,
+                    },
+                    total = d.Total,
+                    parcels = d.Parcels.Select(p => new
+                    {
+                        parcelId = p.ParcelId, label = p.Label, farmName = p.FarmName, status = p.Status, fullPixels = p.FullPixels, usablePixels = p.UsablePixels,
+                        lostShare = p.LostShare, ndviMedian = p.NdviMedian, chips = p.Chips.Select(c => new { id = c.Id, kind = c.Kind }),
+                    }),
+                });
+            })).RequireAuthorization();
+
         app.MapGet("/api/imagery/scenes", async (DateTime? from, DateTime? to, string? tile, SceneCatalog catalog, CancellationToken ct) =>
         {
             if (from is null || to is null || to <= from) return Results.BadRequest(new { error = "invalid_period" });
