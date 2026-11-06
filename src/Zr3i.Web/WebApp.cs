@@ -61,6 +61,7 @@ public static class WebApp
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.AuditReader>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.TenantDirectoryService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Admin.PortfolioService>();
+        builder.Services.AddSingleton<Zr3i.Kernel.Admin.PlatformUsageService>();
         builder.Services.AddSingleton<Zr3i.Kernel.Indicators.IndicatorRecorder>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.CriService>();
         builder.Services.AddSingleton<Zr3i.Modules.Risk.FriService>();

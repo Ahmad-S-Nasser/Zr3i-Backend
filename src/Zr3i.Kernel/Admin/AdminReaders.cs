@@ -93,13 +93,16 @@ public sealed class AuditReader(KernelStore store, TimeProvider clock)
     }
 }
 
-public sealed record TenantView(string Id, string Name, string AccountType, IReadOnlyList<string> Modules, DateTime CreatedAt, int Members, int Farms, int Parcels);
+/// <summary>An organisation as the provider lists it. The preset fields let the provider open it read-only with the same sidebar its own people see.</summary>
+public sealed record TenantView(
+    string Id, string Name, string AccountType, IReadOnlyList<string> Modules, DateTime CreatedAt, int Members, int Farms, int Parcels,
+    string? AccountTypeLabelEn = null, string? AccountTypeLabelAr = null, string? HomeView = null, IReadOnlyList<string>? Navigation = null, bool IsSynthetic = false);
 
 /// <summary>
 /// Every customer organisation, for the provider. Organisations are stored per tenant, so they are found through the users who belong to them;
 /// an organisation nobody has joined yet does not appear until its first user accepts an invitation.
 /// </summary>
-public sealed class TenantDirectoryService(KernelStore store)
+public sealed class TenantDirectoryService(KernelStore store, Zr3i.Kernel.Accounts.AccountTypeService? accountTypes = null)
 {
     public async Task<IReadOnlyList<TenantView>> ListAsync(CancellationToken ct = default)
     {
@@ -117,8 +120,10 @@ public sealed class TenantDirectoryService(KernelStore store)
         {
             var scope = TenantScope.ForTenant(id);
             if (await store.Organisations.GetAsync(scope, id, ct) is not { } org) continue;
+            var preset = accountTypes is null ? null : await accountTypes.GetAsync(org.AccountType, ct);
             result.Add(new TenantView(org.Id, org.Name, org.AccountType, org.Modules, org.CreatedAt,
-                (int)await store.Memberships.CountAsync(scope, _ => true, ct), (int)await store.Farms.CountAsync(scope, _ => true, ct), (int)await store.Parcels.CountAsync(scope, _ => true, ct)));
+                (int)await store.Memberships.CountAsync(scope, _ => true, ct), (int)await store.Farms.CountAsync(scope, _ => true, ct), (int)await store.Parcels.CountAsync(scope, _ => true, ct),
+                preset?.LabelEn, preset?.LabelAr, preset?.HomeView, preset?.Navigation ?? [], org.IsSynthetic));
         }
 
         return [.. result.OrderBy(t => t.Name, StringComparer.Ordinal)];
