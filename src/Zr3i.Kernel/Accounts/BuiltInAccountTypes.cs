@@ -55,7 +55,7 @@ public static class BuiltInAccountTypes
         {
             Key = "zr3i-admin", LabelEn = "Zr3i admin", LabelAr = "إدارة Zr3i", Model = "provider", SelfSignup = false,
             RoleKeys = ["org-admin", "analyst"], Modules = ["verification", "risk"],
-            HomeView = "tenants", Navigation = ["tenants", "access-requests", "satellite", "account-types", "methods", "users", "audit"], SignupFields = [],
+            HomeView = "tenants", Navigation = ["tenants", "usage", "access-requests", "satellite", "account-types", "methods", "users", "audit"], SignupFields = [],
         },
         new()
         {
