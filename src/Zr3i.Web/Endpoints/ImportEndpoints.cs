@@ -114,7 +114,15 @@ public sealed class Guard(AuthorizationService authorization, AuditService audit
     public async Task<IResult> RunAsMemberAsync(HttpContext http, string tenantId, CancellationToken ct, Func<Access, Task<IResult>> body)
     {
         var access = await authorization.GetAccessAsync(http.User.UserId(), tenantId, ct);
-        if (access is null) return Results.Json(new { error = "forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+        if (access is null)
+        {
+            // Provider oversight (ADR 0020): read-only. The body sees read access only, so a role-gated group the provider may read is shown and nothing can change.
+            if (!await authorization.OversightAllowedAsync(http.User.UserId(), tenantId, "kernel:self:read", TenantAccess.IsRead(http), ct))
+                return Results.Json(new { error = "forbidden" }, statusCode: StatusCodes.Status403Forbidden);
+            await TenantAccess.RecordOversightAsync(audit, http.User.UserId(), tenantId, "kernel:self:read", ct);
+            access = new Access(["*:*:read"], [], []);
+        }
+
         try
         {
             return await body(access);
